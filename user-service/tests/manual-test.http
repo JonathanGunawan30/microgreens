@@ -1,0 +1,13 @@
+### POST signin
+POST http://localhost:8080/signin
+Content-Type: application/json
+
+{
+  "email": "superadmin@mail.com",
+  "password": "rahasia"
+}
+
+### check middleware
+GET http://localhost:8080/admin/dashboard
+
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjQzMTU0OTMsImlzcyI6InNlY3JldCIsInVzZXJfaWQiOjF9.PQt5Cv5lnOfkRXFW2PFPpmlR37P7OyPWVujoJnbWe0g

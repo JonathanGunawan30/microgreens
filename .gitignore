@@ -1,0 +1,17 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Environment Variables
+.env
+*/.env
+
+# Editor directories
+.idea/
+.vscode/
+
+# Go specific
+vendor/
