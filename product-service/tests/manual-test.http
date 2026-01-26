@@ -1,0 +1,47 @@
+### GET all admin categories
+GET http://localhost:8081/admin/categories
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json
+
+### create category
+POST http://localhost:8081/admin/categories
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Sayuran",
+  "icon": "https://google.com",
+  "status": true,
+  "description": "Sayur kategori",
+  "parent_id": null
+}
+
+### GET by ID
+GET http://localhost:8081/admin/categories/1
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json
+
+### GET by slug
+GET http://localhost:8081/admin/categories/slug/sayuran
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json
+
+### update category
+PUT http://localhost:8081/admin/categories/1
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Sayuran",
+  "icon": "https://google.com",
+  "status": true,
+  "description": "Sayur kategori",
+  "parent_id": null
+}
+
+### DELETE category
+DELETE http://localhost:8081/admin/categories/1
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json
