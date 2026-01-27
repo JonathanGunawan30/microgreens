@@ -7,6 +7,7 @@ import (
 	"product-service/internal/core/domain/entity"
 	"product-service/internal/core/domain/model"
 	"product-service/utils/message"
+	"strings"
 
 	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
@@ -42,22 +43,40 @@ func (c *categoryRepository) GetAllCategories(ctx context.Context, query entity.
 		orderBy = query.OrderBy
 	}
 
-	orderClause := fmt.Sprintf("%s %s", orderBy, query.OrderType)
+	allowedType := map[string]bool{"asc": true, "desc": true}
+	orderType := "desc"
+	if allowedType[strings.ToLower(query.OrderType)] {
+		orderType = query.OrderType
+	}
 
-	search := "%" + query.Search + "%"
+	orderClause := fmt.Sprintf("%s %s", orderBy, orderType)
+
 	limit := int(query.Limit)
-	offset := int((query.Page - 1) * query.Limit)
+	if limit <= 0 {
+		limit = 10
+	}
 
-	q := c.db.WithContext(ctx).
-		Table("categories").
-		Where("name ILIKE ? OR CAST(status AS TEXT) ILIKE ? OR slug ILIKE ?", search, search, search)
+	page := int(query.Page)
+	if page <= 0 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+
+	q := c.db.WithContext(ctx).Table("categories")
+
+	if query.Search != "" {
+		search := "%" + query.Search + "%"
+		whereSQL := `name ILIKE ? OR CAST(status AS TEXT) ILIKE ? OR slug ILIKE ?`
+
+		q = q.Where(whereSQL, search, search, search)
+	}
 
 	if err := q.Count(&count).Error; err != nil {
 		log.Errorf("[CategoryRepository - 1] GetAllCategories: %v", err)
 		return nil, 0, 0, err
 	}
 
-	total := (count + query.Limit - 1) / query.Limit
+	total := (count + int64(limit) - 1) / int64(limit)
 
 	if err := q.Order(orderClause).
 		Select("categories.*, (SELECT count(*) FROM products WHERE products.category_slug = categories.slug) as product_count").
