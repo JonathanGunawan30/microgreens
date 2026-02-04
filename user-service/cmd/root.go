@@ -10,7 +10,7 @@ import (
 
 var cfgFile string
 var rootCmd = &cobra.Command{
-	Use:   "sayur-api",
+	Use:   "user-sayur-api",
 	Short: "this api for sayur",
 	Run: func(cmd *cobra.Command, args []string) {
 		app.RunServer()

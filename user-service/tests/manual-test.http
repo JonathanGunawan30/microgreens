@@ -7,7 +7,8 @@ Content-Type: application/json
   "password": "rahasia"
 }
 
-### check middleware
-GET http://localhost:8080/admin/dashboard
+> {% client.global.set("X-API-TOKEN", response.body.data.access_token); %}
 
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjQzMTU0OTMsImlzcyI6InNlY3JldCIsInVzZXJfaWQiOjF9.PQt5Cv5lnOfkRXFW2PFPpmlR37P7OyPWVujoJnbWe0g
+### check middleware
+GET http://localhost:8080/admin/customers
+Authorization: Bearer {{X-API-TOKEN}}

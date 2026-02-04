@@ -549,7 +549,7 @@ func (u *userHandler) GetCustomerByID(c echo.Context) error {
 
 	jwtUserData, ok := c.Get("user").(entity.JwtUserData)
 	if !ok {
-		log.Errorf("[UserHandler - 1] GetAllCustomers: invalid user context")
+		log.Errorf("[UserHandler - 1] GetCustomerByID: invalid user context")
 		resp.Message = "invalid user context"
 		resp.Data = nil
 		return c.JSON(http.StatusUnauthorized, resp)
@@ -557,7 +557,7 @@ func (u *userHandler) GetCustomerByID(c echo.Context) error {
 
 	userID := jwtUserData.ID
 	if userID == 0 {
-		log.Errorf("[UserHandler - 2] GetAllCustomers: invalid user id")
+		log.Errorf("[UserHandler - 2] GetCustomerByID: invalid user id")
 		resp.Message = "invalid user id"
 		resp.Data = nil
 		return c.JSON(http.StatusUnauthorized, resp)
@@ -566,7 +566,7 @@ func (u *userHandler) GetCustomerByID(c echo.Context) error {
 	userIDParam := c.Param("id")
 	userID, err := conv.StringToInt64(userIDParam)
 	if err != nil || userID <= 0 {
-		log.Errorf("[UserHandler - 3] GetUserById: invalid user id: '%s'", userIDParam)
+		log.Errorf("[UserHandler - 3] GetCustomerByID: invalid user id: '%s'", userIDParam)
 		resp.Message = "invalid user id"
 		resp.Data = nil
 		return c.JSON(http.StatusBadRequest, resp)
@@ -580,7 +580,7 @@ func (u *userHandler) GetCustomerByID(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, resp)
 		}
 
-		log.Errorf("[UserHandler - 4] GetUserById: %v", err)
+		log.Errorf("[UserHandler - 4] GetCustomerByID: %v", err)
 		resp.Message = "internal server error"
 		resp.Data = nil
 		return c.JSON(http.StatusInternalServerError, resp)
@@ -732,7 +732,7 @@ func (u *userHandler) UpdateCustomer(c echo.Context) error {
 		}
 
 		log.Errorf("[UserHandler - 6] UpdateCustomer: %v", err)
-		resp.Message = err.Error()
+		resp.Message = "internal server error"
 		resp.Data = nil
 		return c.JSON(http.StatusInternalServerError, resp)
 	}
