@@ -17,6 +17,7 @@ type CategoryServiceInterface interface {
 	CreateCategory(ctx context.Context, category entity.CategoryEntity) error
 	UpdateCategory(ctx context.Context, category entity.CategoryEntity) error
 	DeleteCategoryByID(ctx context.Context, categoryID int64) error
+	GetAllPublishedCategories(ctx context.Context) ([]entity.CategoryEntity, error)
 }
 type categoryService struct {
 	repo repository.CategoryRepositoryInterface
@@ -89,4 +90,8 @@ func (c *categoryService) UpdateCategory(ctx context.Context, category entity.Ca
 
 func (c *categoryService) DeleteCategoryByID(ctx context.Context, categoryID int64) error {
 	return c.repo.DeleteCategoryByID(ctx, categoryID)
+}
+
+func (c *categoryService) GetAllPublishedCategories(ctx context.Context) ([]entity.CategoryEntity, error) {
+	return c.repo.GetAllPublishedCategories(ctx)
 }

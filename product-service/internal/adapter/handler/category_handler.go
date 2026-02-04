@@ -25,6 +25,8 @@ type CategoryHandlerInterface interface {
 	CreateAdminCategory(c echo.Context) error
 	UpdateAdminCategory(c echo.Context) error
 	DeleteAdminCategory(c echo.Context) error
+	GetAllHomeCategories(c echo.Context) error
+	GetAllShopCategories(c echo.Context) error
 }
 
 type categoryHandler struct {
@@ -44,6 +46,10 @@ func NewCategoryHandler(e *echo.Echo, categoryService service.CategoryServiceInt
 	adminGroup.POST("/categories", categoryHandler.CreateAdminCategory)
 	adminGroup.PUT("/categories/:id", categoryHandler.UpdateAdminCategory)
 	adminGroup.DELETE("/categories/:id", categoryHandler.DeleteAdminCategory)
+
+	publicGroup := e.Group("/categories")
+	publicGroup.GET("", categoryHandler.GetAllShopCategories)
+	publicGroup.GET("/featured", categoryHandler.GetAllShopCategories)
 
 	return categoryHandler
 }
@@ -359,5 +365,84 @@ func (h *categoryHandler) DeleteAdminCategory(c echo.Context) error {
 
 	resp.Message = "Success"
 	resp.Data = nil
+	return c.JSON(http.StatusOK, resp)
+}
+
+func (h *categoryHandler) GetAllHomeCategories(c echo.Context) error {
+	var (
+		respCategories []response.CategoryListHomeResponse
+		resp           = response.DefaultResponse{}
+		ctx            = c.Request().Context()
+	)
+
+	categories, err := h.categoryService.GetAllPublishedCategories(ctx)
+	if err != nil {
+		log.Errorf("[CategoryHandler - 1] GetAllHomeCategories: %v", err)
+		resp.Message = "internal server error"
+		resp.Data = nil
+		return c.JSON(http.StatusInternalServerError, resp)
+	}
+
+	respCategories = make([]response.CategoryListHomeResponse, 0, len(categories))
+
+	for _, category := range categories {
+		if category.ParentID == nil {
+			respCategories = append(respCategories, response.CategoryListHomeResponse{
+				Name: category.Name,
+				Icon: category.Icon,
+				Slug: category.Slug,
+			})
+		}
+	}
+
+	resp.Message = "Success"
+	resp.Data = respCategories
+
+	return c.JSON(http.StatusOK, resp)
+}
+
+func (h *categoryHandler) GetAllShopCategories(c echo.Context) error {
+	var (
+		resp = response.DefaultResponse{}
+		ctx  = c.Request().Context()
+	)
+
+	categories, err := h.categoryService.GetAllPublishedCategories(ctx)
+	if err != nil {
+		log.Errorf("[CategoryHandler - 1] GetAllShopCategories: %v", err)
+		resp.Message = "internal server error"
+		resp.Data = nil
+		return c.JSON(http.StatusInternalServerError, resp)
+	}
+
+	categoryMap := make(map[int64]*response.CategoryListShopResponse)
+
+	for _, cat := range categories {
+		categoryMap[cat.ID] = &response.CategoryListShopResponse{
+			Name:  cat.Name,
+			Slug:  cat.Slug,
+			Child: make([]*response.CategoryListShopResponse, 0),
+		}
+	}
+
+	var rootCategories []*response.CategoryListShopResponse
+
+	for _, cat := range categories {
+		currentResp := categoryMap[cat.ID]
+
+		if cat.ParentID == nil {
+			rootCategories = append(rootCategories, currentResp)
+		} else {
+			if parentResp, exists := categoryMap[*cat.ParentID]; exists {
+				parentResp.Child = append(parentResp.Child, currentResp)
+			} else {
+				rootCategories = append(rootCategories, currentResp)
+			}
+		}
+	}
+
+	resp.Message = "Success"
+	resp.Data = rootCategories
+
 	return c.JSON(http.StatusOK, resp)
 }

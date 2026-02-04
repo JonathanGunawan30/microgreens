@@ -27,10 +27,12 @@ type RedisConfig struct {
 }
 
 type RabbitmqConfig struct {
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Host             string `json:"host" mapstructure:"RABBITMQ_HOST"`
+	Port             string `json:"port" mapstructure:"RABBITMQ_PORT"`
+	Username         string `json:"username" mapstructure:"RABBITMQ_USER"`
+	Password         string `json:"password" mapstructure:"RABBITMQ_PASSWORD"`
+	QueueStockUpdate string `json:"queue_stock_update" mapstructure:"RABBITMQ_QUEUE_STOCK_UPDATE"`
+	QueueEsIndexing  string `json:"queue_es_indexing" mapstructure:"RABBITMQ_QUEUE_ES_INDEXING"`
 }
 
 type Supabase struct {
@@ -39,12 +41,19 @@ type Supabase struct {
 	Bucket string `json:"bucket"`
 }
 
+type Elasticsearch struct {
+	Host     string `json:"host"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type Config struct {
-	App      App            `json:"app"`
-	Psql     PsqlDB         `json:"psql"`
-	Redis    RedisConfig    `json:"redis"`
-	RabbitMQ RabbitmqConfig `json:"rabbitmq"`
-	Supabase Supabase       `json:"supabase"`
+	App           App            `json:"app"`
+	Psql          PsqlDB         `json:"psql"`
+	Redis         RedisConfig    `json:"redis"`
+	RabbitMQ      RabbitmqConfig `json:"rabbitmq"`
+	Supabase      Supabase       `json:"supabase"`
+	Elasticsearch Elasticsearch  `json:"elasticsearch"`
 }
 
 func NewConfig() *Config {
@@ -70,15 +79,22 @@ func NewConfig() *Config {
 			DB:       viper.GetInt("REDIS_DB"),
 		},
 		RabbitMQ: RabbitmqConfig{
-			Host:     viper.GetString("RABBITMQ_HOST"),
-			Port:     viper.GetString("RABBITMQ_PORT"),
-			Username: viper.GetString("RABBITMQ_USERNAME"),
-			Password: viper.GetString("RABBITMQ_PASSWORD"),
+			Host:             viper.GetString("RABBITMQ_HOST"),
+			Port:             viper.GetString("RABBITMQ_PORT"),
+			Username:         viper.GetString("RABBITMQ_USERNAME"),
+			Password:         viper.GetString("RABBITMQ_PASSWORD"),
+			QueueStockUpdate: viper.GetString("RABBITMQ_QUEUE_STOCK_UPDATE"),
+			QueueEsIndexing:  viper.GetString("RABBITMQ_QUEUE_ES_INDEXING"),
 		},
 		Supabase: Supabase{
 			URL:    viper.GetString("SUPABASE_STORAGE_URL"),
 			Key:    viper.GetString("SUPABASE_STORAGE_KEY"),
 			Bucket: viper.GetString("SUPABASE_STORAGE_BUCKET"),
+		},
+		Elasticsearch: Elasticsearch{
+			Host:     viper.GetString("ELASTICSEARCH_HOST"),
+			Username: viper.GetString("ELASTICSEARCH_USERNAME"),
+			Password: viper.GetString("ELASTICSEARCH_PASSWORD"),
 		},
 	}
 }

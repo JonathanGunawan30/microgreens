@@ -10,15 +10,15 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "name": "Sayuran",
+  "name": "Ayam dan daging",
   "icon": "https://google.com",
   "status": true,
-  "description": "Sayur kategori",
+  "description": "Ayam dan daging kategori",
   "parent_id": null
 }
 
 ### GET by ID
-GET http://localhost:8081/admin/categories/1
+GET http://localhost:8081/admin/categories/2
 Authorization: Bearer {{X-API-TOKEN}}
 Accept: application/json
 
@@ -42,6 +42,104 @@ Content-Type: application/json
 }
 
 ### DELETE category
-DELETE http://localhost:8081/admin/categories/1
+DELETE http://localhost:8081/admin/categories/2
 Authorization: Bearer {{X-API-TOKEN}}
 Accept: application/json
+
+
+### GET products
+GET http://localhost:8081/admin/products?search=bayem&status=active
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json
+
+### GET product by ID
+GET http://localhost:8081/admin/products/7
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json
+
+### create product
+POST http://localhost:8081/admin/products
+Authorization: Bearer {{X-API-TOKEN}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "ayam",
+  "category_slug": "ayam-dan-daging",
+  "unit": "gram",
+  "description": "ayam segar",
+  "status": "active",
+  "variant": 2,
+  "variant_detail": [
+    {
+      "stock": 5,
+      "weight": 250,
+      "image": "https://google.com",
+      "sale_price": 25000,
+      "reguler_price": 30000
+    },
+    {
+      "stock": 20,
+      "weight": 500,
+      "image": "https://google.com",
+      "sale_price": 35000,
+      "reguler_price": 40000
+    }
+  ]
+}
+
+### Update Product
+PUT http://localhost:8081/admin/products/22
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+{
+  "name": "Kangkung UPDATE",
+  "category_slug": "sayuran",
+  "unit": "gram",
+  "description": "Kangkung segar",
+  "status": "active",
+  "variant": 2,
+  "variant_detail": [
+    {
+      "stock": 10,
+      "weight": 250,
+      "image": "https://google.com",
+      "sale_price": 20000,
+      "reguler_price": 25000
+    },
+    {
+      "stock": 10,
+      "weight": 500,
+      "image": "https://google.com",
+      "sale_price": 30000,
+      "reguler_price": 35000
+    }
+  ]
+}
+
+### DELETE product
+DELETE http://localhost:8081/admin/products/17
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### Public product
+GET http://localhost:8081/products?category=buah-dan-sayur&search=buaah
+Accept: application/json
+
+### Upload Image Only
+POST http://localhost:8081/admin/image-upload
+Authorization: Bearer {{X-API-TOKEN}}
+Content-Type: multipart/form-data; boundary=BatasUpload
+
+--BatasUpload
+Content-Disposition: form-data; name="image"; filename="kangkung.jpg"
+Content-Type: image/jpeg
+
+< ./kangkung.jpg
+--BatasUpload--
+
+### ELASTICSEARCH Get Data
+GET https://localhost:9201/products/_search?pretty=true
+Authorization: Basic elastic changeme

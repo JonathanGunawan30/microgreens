@@ -21,6 +21,7 @@ type CategoryRepositoryInterface interface {
 	UpdateCategory(ctx context.Context, category entity.CategoryEntity) error
 	DeleteCategoryByID(ctx context.Context, categoryID int64) error
 	CheckSlugExists(ctx context.Context, slug string) (bool, error)
+	GetAllPublishedCategories(ctx context.Context) ([]entity.CategoryEntity, error)
 }
 
 type categoryRepository struct {
@@ -238,4 +239,27 @@ func (c *categoryRepository) CheckSlugExists(ctx context.Context, slug string) (
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (c *categoryRepository) GetAllPublishedCategories(ctx context.Context) ([]entity.CategoryEntity, error) {
+	var modelCategory []model.Category
+
+	if err := c.db.WithContext(ctx).Table("categories").Select("id", "parent_id", "name", "icon", "slug").Where("status = ?", true).Order("name ASC").Find(&modelCategory).Error; err != nil {
+		log.Errorf("[CategoryRepository - 2] GetAllPublishedCategories: %v", err)
+		return nil, err
+	}
+
+	result := make([]entity.CategoryEntity, 0, len(modelCategory))
+
+	for _, category := range modelCategory {
+		result = append(result, entity.CategoryEntity{
+			ID:       category.ID,
+			ParentID: category.ParentID,
+			Name:     category.Name,
+			Icon:     category.Icon,
+			Slug:     category.Slug,
+		})
+	}
+
+	return result, nil
 }

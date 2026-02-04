@@ -7,6 +7,7 @@ import (
 	"product-service/config"
 	"product-service/internal/adapter/handler"
 	"product-service/internal/adapter/repository"
+	"product-service/internal/adapter/storage"
 	"product-service/internal/core/service"
 	"product-service/utils/validator"
 	"syscall"
@@ -23,13 +24,27 @@ func RunServer() {
 	db, err := cfg.ConnectionPostgres()
 	if err != nil {
 		log.Fatalf("[RunServer-1] Failed to connect to database: %v", err)
-		return
 	}
 
 	redisClient := config.NewRedisClient(cfg)
+	supabaseStorage := storage.NewSupabaseStorage(cfg)
+	rabbitMQClient, err := cfg.NewRabbitMQClient()
+	if err != nil {
+		log.Fatalf("[RunServer - 2] Failed to connect to RabbbitMQ: %v", err)
+	}
+	elasticsearchClient, err := cfg.NewElasticsearchClient()
+	if err != nil {
+		log.Fatalf("[RunServer - 3] Failed to connect to Elasticsearch: %v", err)
+	}
+
+	defer rabbitMQClient.Close()
 
 	categoryRepository := repository.NewCategoryRepository(db.DB)
+	productRepository := repository.NewProductRepository(db.DB, elasticsearchClient)
+
 	categoryService := service.NewCategoryService(categoryRepository)
+	productService := service.NewProductService(productRepository, rabbitMQClient, cfg.RabbitMQ.QueueEsIndexing)
+	imageService := service.NewImageService(supabaseStorage)
 
 	e := echo.New()
 	e.Use(middleware.CORS())
@@ -37,7 +52,7 @@ func RunServer() {
 	customValidator := validator.NewValidator()
 	err = en.RegisterDefaultTranslations(customValidator.Validator, customValidator.Translator)
 	if err != nil {
-		log.Fatalf("[RunServer-2] Failed to register validator translations: %v", err)
+		log.Fatalf("[RunServer-4] Failed to register validator translations: %v", err)
 	}
 	e.Validator = customValidator
 
@@ -46,6 +61,8 @@ func RunServer() {
 	})
 
 	handler.NewCategoryHandler(e, categoryService, cfg, redisClient)
+	handler.NewProductHandler(e, productService, cfg, redisClient)
+	handler.NewUploadImage(e, imageService, cfg, redisClient)
 
 	go func() {
 		if cfg.App.AppPort == "" {
@@ -53,7 +70,7 @@ func RunServer() {
 		}
 		err = e.Start(":" + cfg.App.AppPort)
 		if err != nil {
-			log.Fatalf("[RunServer-3] Failed to start server: %v", err)
+			log.Fatalf("[RunServer-5] Failed to start server: %v", err)
 		}
 	}()
 	log.Info("[RunServer-4] Server is running on port ", cfg.App.AppPort)
@@ -63,7 +80,7 @@ func RunServer() {
 	signal.Notify(quit, syscall.SIGTERM)
 	<-quit
 
-	log.Info("[RunServer-4] Shutting down server...")
+	log.Info("[RunServer-6] Shutting down server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	e.Shutdown(ctx)
