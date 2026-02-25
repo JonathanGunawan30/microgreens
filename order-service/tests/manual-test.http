@@ -1,0 +1,98 @@
+@baseUrl = http://localhost:8082
+
+### CREATE ORDER
+POST {{baseUrl}}/auth/orders?lat=-6.1818&lng=106.8223
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+{
+  "buyer_id": 13,
+  "order_date": "2025-01-01",
+  "total_amount": 20000,
+  "shipping_type": "Pickup",
+  "remarks": "",
+  "order_time": "12:01:01",
+  "order_details": [
+    {
+      "product_id": 25,
+      "quantity": 1
+    }
+  ],
+  "payment_type": "COD"
+}
+
+### CREATE ORDER FAILED
+POST {{baseUrl}}/auth/orders?lat=-6.1583&lng=106.8992
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+{
+  "buyer_id": 13,
+  "order_date": "2025-01-01",
+  "total_amount": 20000,
+  "shipping_type": "Pickup",
+  "remarks": "",
+  "order_time": "12:01:01",
+  "order_details": [
+    {
+      "product_id": 25,
+      "quantity": 1
+    }
+  ]
+}
+
+### ADMIN CHECK ORDERS
+GET {{baseUrl}}/admin/orders
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### ADMIN GET ORDER BY ID
+GET {{baseUrl}}/admin/orders/6
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### TEST PRODUCT BY ID
+GET http://localhost:8081/admin/products/25
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### TEST CUSTOMER BY ID
+GET http://localhost:8080/admin/customers/13
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### CUSTOMER GET ORDERS
+GET {{baseUrl}}/auth/orders
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### CUSTOMER GET DETAIL ORDER
+GET {{baseUrl}}/auth/orders/3
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### ADMIN GET DETAIL ORDER
+GET {{baseUrl}}/admin/orders/3
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### ADMIN UPDATE ORDER STATUS
+PATCH {{baseUrl}}/admin/orders/12/status
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+{
+  "remarks": "",
+  "status": "Sending"
+}
+
+### ELASTICSEARCH
+GET https://localhost:9201/orders/_source/12
+Authorization: Basic elastic changeme
+
+### ES DELETE ORDERS
+DELETE https://localhost:9201/orders
+Authorization: Basic elastic changeme
