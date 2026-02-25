@@ -585,6 +585,7 @@ func (p *productHandler) GetHomeProductDetail(c echo.Context) error {
 				RegulerPrice: child.RegulerPrice,
 				Weight:       child.Weight,
 				Stock:        child.Stock,
+				Image:        child.Image,
 			})
 		}
 	}
@@ -594,6 +595,9 @@ func (p *productHandler) GetHomeProductDetail(c echo.Context) error {
 		Name:         product.Name,
 		CategoryName: product.CategorySlug,
 		Unit:         product.Unit,
+		Image:        product.Image,
+		SalePrice:    product.SalePrice,
+		Weight:       product.Weight,
 		Child:        childResponses,
 	}
 
