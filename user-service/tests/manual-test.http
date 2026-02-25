@@ -1,5 +1,6 @@
+@baseUrl = http://localhost:8080
 ### POST signin
-POST http://localhost:8080/signin
+POST {{baseUrl}}/signin
 Content-Type: application/json
 
 {
@@ -10,5 +11,26 @@ Content-Type: application/json
 > {% client.global.set("X-API-TOKEN", response.body.data.access_token); %}
 
 ### check middleware
-GET http://localhost:8080/admin/customers
+GET {{baseUrl}}/admin/customers
 Authorization: Bearer {{X-API-TOKEN}}
+
+### update users
+PUT {{baseUrl}}/auth/profile
+Authorization: Bearer {{X-API-TOKEN}}
+Content-Type: application/json
+
+{
+    "email": "jgunawan30052@gmail.com",
+    "password": "rahasia",
+    "name": "Jonathan Gunawan",
+    "phone": "081234567890",
+    "address": "Jl. Medan Merdeka Selatan No. 8, Gambir, Jakarta Pusat",
+    "lat": "-6.1818",
+    "lng": "106.8223",
+    "photo": "https://google.com"
+}
+
+### get users profile
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{X-API-TOKEN}}
+Accept: application/json

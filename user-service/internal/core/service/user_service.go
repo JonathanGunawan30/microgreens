@@ -68,7 +68,7 @@ func (u *userService) SignIn(ctx context.Context, req entity.UserEntity) (*entit
 		return nil, "", message.ErrInvalidCredential
 	}
 
-	token, err := u.jwtService.GenerateToken(user.ID)
+	token, err := u.jwtService.GenerateToken(user.ID, user.RoleName)
 	if err != nil {
 		log.Errorf("[UserService-3] SignIn: %v", err)
 		return nil, "", err
@@ -172,7 +172,7 @@ func (u *userService) VerifyToken(ctx context.Context, token string) (*entity.Us
 		return nil, err
 	}
 
-	accessToken, err := u.jwtService.GenerateToken(updateUserVerified.ID)
+	accessToken, err := u.jwtService.GenerateToken(updateUserVerified.ID, updateUserVerified.RoleName)
 	if err != nil {
 		log.Errorf("[UserService-3] VerifyToken: %v", err)
 		return nil, err

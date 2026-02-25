@@ -428,6 +428,7 @@ func (u *userHandler) UpdateDataUser(c echo.Context) error {
 		Lat:     req.Lat,
 		Lng:     req.Lng,
 		Phone:   req.Phone,
+		Photo:   req.Photo,
 	}
 
 	err := u.userService.UpdateDataUser(ctx, reqEntity)

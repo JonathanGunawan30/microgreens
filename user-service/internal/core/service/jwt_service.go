@@ -10,7 +10,7 @@ import (
 )
 
 type JwtServiceInterface interface {
-	GenerateToken(payload int64) (string, error)
+	GenerateToken(payload int64, role string) (string, error)
 	ValidateToken(token string) (*jwt.Token, error)
 }
 
@@ -26,9 +26,10 @@ func NewJwtService(cfg *config.Config) JwtServiceInterface {
 	}
 }
 
-func (j *jwtService) GenerateToken(userID int64) (string, error) {
+func (j *jwtService) GenerateToken(userID int64, role string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,
+		"role":    role,
 		"iss":     j.issuer,
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})

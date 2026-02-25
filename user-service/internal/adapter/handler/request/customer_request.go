@@ -7,9 +7,9 @@ type CustomerRequest struct {
 	PasswordConfirmation string `json:"password_confirmation" validate:"eqfield=Password"`
 	Phone                string `json:"phone" validate:"required"`
 	Photo                string `json:"photo"`
-	Address              string `json:"address"`
-	Lat                  string `json:"lat"`
-	Lng                  string `json:"lng"`
+	Address              string `json:"address" validate:"required"`
+	Lat                  string `json:"lat" validate:"required"`
+	Lng                  string `json:"lng" validate:"required"`
 }
 
 type UpdateCustomerRequest struct {
