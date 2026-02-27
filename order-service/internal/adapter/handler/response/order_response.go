@@ -18,6 +18,7 @@ type OrderAdminDetail struct {
 	Status        string        `json:"status"`
 	PaymentMethod string        `json:"payment_method"`
 	ShippingFee   int64         `json:"shipping_fee"`
+	ShippingType  string        `json:"shipping_type"`
 	Remarks       string        `json:"remarks"`
 	TotalAmount   int64         `json:"total_amount"`
 	Customer      CustomerOrder `json:"customer"`

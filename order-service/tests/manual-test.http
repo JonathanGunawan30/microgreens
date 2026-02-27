@@ -19,7 +19,7 @@ Authorization: Bearer {{X-API-TOKEN}}
       "quantity": 1
     }
   ],
-  "payment_type": "COD"
+  "payment_type": "midtrans"
 }
 
 ### CREATE ORDER FAILED
@@ -90,7 +90,7 @@ Authorization: Bearer {{X-API-TOKEN}}
 }
 
 ### ELASTICSEARCH
-GET https://localhost:9201/orders/_source/12
+GET https://localhost:9201/orders/_source/14
 Authorization: Basic elastic changeme
 
 ### ES DELETE ORDERS

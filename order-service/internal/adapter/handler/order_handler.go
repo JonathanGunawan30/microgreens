@@ -128,6 +128,7 @@ func (o *orderHandler) GetOrderByID(c echo.Context) error {
 	respOrder.TotalAmount = int64(order.TotalAmount)
 	respOrder.OrderDateTime = order.OrderDate
 	respOrder.ShippingFee = int64(order.ShippingFee)
+	respOrder.ShippingType = order.ShippingType
 	respOrder.Remarks = order.Remarks
 	respOrder.Customer = response.CustomerOrder{
 		CustomerID:      order.BuyerID,
@@ -181,6 +182,8 @@ func (o *orderHandler) GetCustomerOrderByID(c echo.Context) error {
 	respOrder.TotalAmount = int64(order.TotalAmount)
 	respOrder.OrderDateTime = order.OrderDate
 	respOrder.ShippingFee = int64(order.ShippingFee)
+	respOrder.ShippingType = order.ShippingType
+	respOrder.PaymentMethod = order.PaymentMethod
 	respOrder.Remarks = order.Remarks
 	respOrder.Customer = response.CustomerOrder{
 		CustomerID:      order.BuyerID,
@@ -393,6 +396,8 @@ func (o *orderHandler) GetOrderByOrderCode(c echo.Context) error {
 	respOrder.TotalAmount = int64(order.TotalAmount)
 	respOrder.OrderDateTime = order.OrderDate
 	respOrder.ShippingFee = int64(order.ShippingFee)
+	respOrder.ShippingType = order.ShippingType
+	respOrder.PaymentMethod = order.PaymentMethod
 	respOrder.Remarks = order.Remarks
 	respOrder.Customer = response.CustomerOrder{
 		CustomerID:      order.BuyerID,
