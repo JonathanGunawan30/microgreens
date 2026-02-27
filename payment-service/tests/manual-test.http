@@ -1,0 +1,44 @@
+@baseUrl = http://localhost:8083
+
+### CREATE PAYMENT COD
+POST {{baseUrl}}/auth/payments
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+{
+  "order_id": 14,
+  "gross_amount": 20000,
+  "user_id": 13,
+  "remarks": "",
+  "payment_method": "cod"
+}
+
+### CREATE PAYMENT MIDTRANS
+POST {{baseUrl}}/auth/payments
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+{
+  "order_id": 15,
+  "gross_amount": 20000,
+  "user_id": 13,
+  "remarks": "",
+  "payment_method": "midtrans"
+}
+
+### GET PAYMENT
+GET {{baseUrl}}/admin/payments
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### GET PAYMENT AUTH
+GET {{baseUrl}}/auth/payments
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
+
+### GET DETAIL PAYMENT AUTH
+GET {{baseUrl}}/auth/payments/2
+Accept: application/json
+Authorization: Bearer {{X-API-TOKEN}}
