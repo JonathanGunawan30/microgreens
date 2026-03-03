@@ -7,6 +7,7 @@ const (
 	StatusSending   = "Sending"
 	StatusCancelled = "Cancelled"
 	StatusCompleted = "Completed"
+	PUSH_NOTIF      = "PUSH"
 )
 
 var ValidOrderTransitions = map[string]map[string]bool{

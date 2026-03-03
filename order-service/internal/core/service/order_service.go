@@ -11,6 +11,7 @@ import (
 	"order-service/internal/adapter/message"
 	"order-service/internal/adapter/repository"
 	"order-service/internal/core/domain/entity"
+	"order-service/utils/constant"
 	"order-service/utils/generator"
 	"strconv"
 
@@ -268,9 +269,16 @@ func (o *orderService) UpdateStatusOrder(ctx context.Context, req entity.OrderEn
 
 	bgCtx := context.Background()
 	go func(ctx context.Context, targetEmail, body string) {
-		err = message.PublishEmailUpdateStatus(o.rabbitmq, targetEmail, body, o.cfg.PublisherName.EmailUpdateStatus)
+		err = message.PublishEmailUpdateStatus(o.rabbitmq, targetEmail, body, o.cfg.PublisherName.EmailUpdateStatus, buyerID)
 		if err != nil {
 			log.Errorf("[Background-Email] Failed to publish: %v", err)
+		}
+	}(bgCtx, email, emailBody)
+
+	go func(ctx context.Context, targetEmail, body string) {
+		err = message.PublishSendPushNotifUpdateStatus(o.rabbitmq, body, constant.PUSH_NOTIF, buyerID)
+		if err != nil {
+			log.Errorf("[Background-PushNotif] Failed to push notif: %v", err)
 		}
 	}(bgCtx, email, emailBody)
 
