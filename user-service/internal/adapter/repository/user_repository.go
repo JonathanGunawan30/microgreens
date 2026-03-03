@@ -15,7 +15,7 @@ import (
 
 type UserRepositoryInterface interface {
 	GetUserByEmail(ctx context.Context, email string) (*entity.UserEntity, error)
-	CreateUserAccount(ctx context.Context, user entity.UserEntity) error
+	CreateUserAccount(ctx context.Context, user entity.UserEntity) (int64, error)
 	UpdateUserVerified(ctx context.Context, userID int64) (*entity.UserEntity, error)
 	UpdatePasswordByID(ctx context.Context, user entity.UserEntity) error
 	GetUserByID(ctx context.Context, userID int64) (*entity.UserEntity, error)
@@ -24,7 +24,7 @@ type UserRepositoryInterface interface {
 	// Customer
 	GetAllCustomers(ctx context.Context, query entity.QueryStringCustomer) ([]entity.UserEntity, int64, int64, error)
 	GetCustomerByID(ctx context.Context, userID int64) (*entity.UserEntity, error)
-	CreateCustomer(ctx context.Context, user entity.UserEntity) error
+	CreateCustomer(ctx context.Context, user entity.UserEntity) (int64, error)
 	UpdateCustomer(ctx context.Context, user entity.UserEntity) error
 	DeleteCustomer(ctx context.Context, customerID int64) error
 }
@@ -65,10 +65,12 @@ func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*ent
 
 }
 
-func (u *userRepository) CreateUserAccount(ctx context.Context, user entity.UserEntity) error {
-	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+func (u *userRepository) CreateUserAccount(ctx context.Context, user entity.UserEntity) (int64, error) {
+	var userID int64
+
+	err := u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		modelRole := model.Role{}
-		err := u.db.WithContext(ctx).Where("name = ?", "Customer").First(&modelRole).Error
+		err := tx.Where("name = ?", "Customer").First(&modelRole).Error
 		if err != nil {
 			log.Errorf("[UserRepository-1] CreateUserAccount: %v", err)
 			return err
@@ -81,7 +83,7 @@ func (u *userRepository) CreateUserAccount(ctx context.Context, user entity.User
 			Roles:    []model.Role{modelRole},
 		}
 
-		if err = u.db.WithContext(ctx).Create(&modelUser).Error; err != nil {
+		if err = tx.Create(&modelUser).Error; err != nil {
 			log.Errorf("[UserRepository-2] CreateUserAccount: %v", err)
 			return err
 		}
@@ -93,13 +95,20 @@ func (u *userRepository) CreateUserAccount(ctx context.Context, user entity.User
 			ExpiresAt: time.Now().Add(time.Hour * 24),
 		}
 
-		if err = u.db.WithContext(ctx).Create(&modelVerify).Error; err != nil {
+		if err = tx.Create(&modelVerify).Error; err != nil {
 			log.Errorf("[UserRepository-3] CreateUserAccount: %v", err)
 			return err
 		}
 
+		userID = modelUser.ID
 		return nil
 	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return userID, nil
 }
 
 func (u *userRepository) UpdateUserVerified(ctx context.Context, userID int64) (*entity.UserEntity, error) {
@@ -299,12 +308,12 @@ func (u *userRepository) GetCustomerByID(ctx context.Context, userID int64) (*en
 
 }
 
-func (u *userRepository) CreateCustomer(ctx context.Context, user entity.UserEntity) error {
+func (u *userRepository) CreateCustomer(ctx context.Context, user entity.UserEntity) (int64, error) {
 	modelRole := model.Role{}
 	err := u.db.WithContext(ctx).Where("name = ?", "Customer").First(&modelRole).Error
 	if err != nil {
 		log.Errorf("[UserRepository-1] CreateCustomer: %v", err)
-		return err
+		return 0, err
 	}
 
 	modelUser := model.User{
@@ -322,10 +331,10 @@ func (u *userRepository) CreateCustomer(ctx context.Context, user entity.UserEnt
 
 	if err = u.db.WithContext(ctx).Create(&modelUser).Error; err != nil {
 		log.Errorf("[UserRepository-2] CreateCustomer: %v", err)
-		return err
+		return 0, err
 	}
 
-	return nil
+	return modelUser.ID, nil
 }
 
 func (u *userRepository) UpdateCustomer(ctx context.Context, user entity.UserEntity) error {

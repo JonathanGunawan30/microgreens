@@ -34,3 +34,24 @@ Content-Type: application/json
 GET {{baseUrl}}/auth/profile
 Authorization: Bearer {{X-API-TOKEN}}
 Accept: application/json
+
+### CREATE USER
+POST {{baseUrl}}/signup
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "jonathan1",
+  "email": "jonathan1@mail.com",
+  "password": "rahasia",
+  "password_confirmation": "rahasia"
+}
+
+### FORGOT PASSWORD
+POST {{baseUrl}}/forgot-password
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "jonathan1@mail.com"
+}

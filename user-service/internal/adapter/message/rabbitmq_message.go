@@ -3,12 +3,13 @@ package message
 import (
 	"encoding/json"
 	"user-service/config"
+	"user-service/utils"
 
 	"github.com/labstack/gommon/log"
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func PublishMessage(email, message, notif_type string) error {
+func PublishMessage(userID int64, email, message, queueName, subject string) error {
 	conn, err := config.NewConfig().NewRabbitMQClient()
 
 	if err != nil {
@@ -25,16 +26,24 @@ func PublishMessage(email, message, notif_type string) error {
 	}
 	defer ch.Close()
 
-	queue, err := ch.QueueDeclare(notif_type, true, false, false, false, nil)
+	queue, err := ch.QueueDeclare(queueName, true, false, false, false, nil)
 
 	if err != nil {
 		log.Errorf("[PublishMessage-3] Failed to declare a queue: %v", err)
 		return err
 	}
 
-	notification := map[string]string{
-		"email":   email,
-		"message": message,
+	notifType := "EMAIL"
+	if queueName == utils.PUSH_NOTIF {
+		notifType = "PUSH"
+	}
+
+	notification := map[string]any{
+		"receiver_email":    email,
+		"message":           message,
+		"receiver_id":       userID,
+		"subject":           subject,
+		"notification_type": notifType,
 	}
 
 	body, err := json.Marshal(notification)

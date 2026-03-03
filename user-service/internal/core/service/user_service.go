@@ -110,20 +110,20 @@ func (u *userService) CreateUserAccount(ctx context.Context, user entity.UserEnt
 	token := uuid.New().String()
 	user.Token = token
 
-	err = u.repo.CreateUserAccount(ctx, user)
+	userID, err := u.repo.CreateUserAccount(ctx, user)
 	if err != nil {
 		log.Errorf("[UserService-2] CreateUserAccount: %v", err)
 		return err
 	}
 
-	urlVerify := fmt.Sprintf("http://localhost:8080/verify?token=%s", token)
+	urlVerify := fmt.Sprintf("http://localhost:8080/verify-account?token=%s", token)
 	messageParam := fmt.Sprintf("Please verify your email address by clicking this link: %s", urlVerify)
-	err = publisher.PublishMessage(user.Email, messageParam, "email_verification")
-	if err != nil {
-		log.Errorf("[UserService-3] CreateUserAccount: %v", err)
-		return err
-	}
-
+	go func() {
+		err = publisher.PublishMessage(userID, user.Email, messageParam, utils.NOTIF_EMAIL_VERIFICATION, "Verify Your Account")
+		if err != nil {
+			log.Errorf("[UserService-3] CreateUserAccount: %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -150,12 +150,12 @@ func (u *userService) ForgotPassword(ctx context.Context, user entity.UserEntity
 
 	urlForgot := fmt.Sprintf("%s/forgot-password?token=%s", u.cfg.App.UrlForgotPassword, token)
 	messageParam := fmt.Sprintf("Please reset your password by clicking this link: %s", urlForgot)
-	err = publisher.PublishMessage(user.Email, messageParam, "forgot_password")
-	if err != nil {
-		log.Errorf("[UserService-3] ForgotPassword: %v", err)
-		return err
-	}
-
+	go func() {
+		err = publisher.PublishMessage(user.ID, user.Email, messageParam, utils.NOTIF_EMAIL_FORGOT_PASSWORD, "Reset Your Password")
+		if err != nil {
+			log.Errorf("[UserService-3] ForgotPassword: %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -258,19 +258,19 @@ func (u *userService) CreateCustomer(ctx context.Context, user entity.UserEntity
 
 	user.Password = password
 
-	err = u.repo.CreateCustomer(ctx, user)
+	userID, err := u.repo.CreateCustomer(ctx, user)
 	if err != nil {
-		log.Errorf("[UserService-3] CreateCustomer: %v", err)
+		log.Errorf("[UserService-2] CreateCustomer: %v", err)
 		return err
 	}
 
 	messageParam := fmt.Sprintf("Welcome to %s, your account has been created successfully. You can now login using email %s.", utils.APP_NAME, user.Email)
-
-	err = publisher.PublishMessage(user.Email, messageParam, utils.NOTIF_EMAIL_CREATE_CUSTOMER)
-	if err != nil {
-		log.Warnf("[UserService-2] Email Failed (User Created): %v", err)
-	}
-
+	go func() {
+		err = publisher.PublishMessage(userID, user.Email, messageParam, utils.NOTIF_EMAIL_CREATE_CUSTOMER, "Account has been created successfully")
+		if err != nil {
+			log.Errorf("[UserService-3] Email Failed (Create User): %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -291,11 +291,12 @@ func (u *userService) UpdateCustomer(ctx context.Context, user entity.UserEntity
 	}
 
 	messageParam := fmt.Sprint("Your account has been updated successfully.")
-	err = publisher.PublishMessage(user.Email, messageParam, utils.NOTIF_EMAIL_UPDATE_CUSTOMER)
-	if err != nil {
-		log.Warnf("[UserService - 3] UpdateCustomer: %v", err)
-	}
-
+	go func() {
+		err = publisher.PublishMessage(user.ID, user.Email, messageParam, utils.NOTIF_EMAIL_UPDATE_CUSTOMER, "Account updated successfully")
+		if err != nil {
+			log.Errorf("[UserService - 3] UpdateCustomer: %v", err)
+		}
+	}()
 	return nil
 
 }
