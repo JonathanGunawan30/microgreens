@@ -155,6 +155,13 @@ func (u *userHandler) CreateUserAccount(c echo.Context) error {
 	err := u.userService.CreateUserAccount(ctx, userEntity)
 	if err != nil {
 		log.Errorf("[UserHandler - 3] CreateUserAccount: %v", err)
+
+		if errors.Is(err, message.ErrEmailAlreadyExists) {
+			resp.Message = "email already exists"
+			resp.Data = nil
+			return c.JSON(http.StatusConflict, resp)
+		}
+
 		resp.Message = "internal server error"
 		resp.Data = nil
 		return c.JSON(http.StatusInternalServerError, resp)
@@ -433,14 +440,20 @@ func (u *userHandler) UpdateDataUser(c echo.Context) error {
 
 	err := u.userService.UpdateDataUser(ctx, reqEntity)
 	if err != nil {
+		log.Errorf("[UserHandler - 4] UpdateDataUser: %v", err)
+
 		if errors.Is(err, message.ErrUserNotFound) {
-			log.Errorf("[UserHandler - 4] UpdateDataUser: %v", err)
 			resp.Message = "user not found"
 			resp.Data = nil
 			return c.JSON(http.StatusNotFound, resp)
 		}
 
-		log.Errorf("[UserHandler - 5] UpdateDataUser: %v", err)
+		if errors.Is(err, message.ErrEmailAlreadyExists) {
+			resp.Message = "email already exists"
+			resp.Data = nil
+			return c.JSON(http.StatusConflict, resp)
+		}
+
 		resp.Message = "internal server error"
 		resp.Data = nil
 		return c.JSON(http.StatusInternalServerError, resp)
@@ -656,6 +669,13 @@ func (u *userHandler) CreateCustomer(c echo.Context) error {
 
 	if err := u.userService.CreateCustomer(ctx, userEntity); err != nil {
 		log.Errorf("[UserHandler - 5] CreateCustomer: %v", err)
+
+		if errors.Is(err, message.ErrEmailAlreadyExists) {
+			resp.Message = "email already exists"
+			resp.Data = nil
+			return c.JSON(http.StatusConflict, resp)
+		}
+
 		resp.Message = "internal server error"
 		resp.Data = nil
 		return c.JSON(http.StatusInternalServerError, err)
@@ -725,14 +745,20 @@ func (u *userHandler) UpdateCustomer(c echo.Context) error {
 
 	err = u.userService.UpdateCustomer(ctx, userEntity)
 	if err != nil {
+		log.Errorf("[UserHandler - 5] UpdateCustomer: %v", err)
+
 		if errors.Is(err, message.ErrCustomerNotFound) {
-			log.Errorf("[UserHandler - 5] UpdateCustomer: %v", err)
 			resp.Message = err.Error()
 			resp.Data = nil
 			return c.JSON(http.StatusNotFound, resp)
 		}
 
-		log.Errorf("[UserHandler - 6] UpdateCustomer: %v", err)
+		if errors.Is(err, message.ErrEmailAlreadyExists) {
+			resp.Message = "email already exists"
+			resp.Data = nil
+			return c.JSON(http.StatusConflict, resp)
+		}
+
 		resp.Message = "internal server error"
 		resp.Data = nil
 		return c.JSON(http.StatusInternalServerError, resp)

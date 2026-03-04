@@ -9,6 +9,7 @@ import (
 	"user-service/internal/core/domain/model"
 	"user-service/utils/message"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
 )
@@ -84,6 +85,12 @@ func (u *userRepository) CreateUserAccount(ctx context.Context, user entity.User
 		}
 
 		if err = tx.Create(&modelUser).Error; err != nil {
+			var pgError *pgconn.PgError
+
+			if errors.As(err, &pgError) && pgError.Code == "23505" {
+				return message.ErrEmailAlreadyExists
+			}
+
 			log.Errorf("[UserRepository-2] CreateUserAccount: %v", err)
 			return err
 		}
@@ -210,6 +217,12 @@ func (u *userRepository) UpdateDataUser(ctx context.Context, user entity.UserEnt
 
 	if tx.Error != nil {
 		log.Errorf("[UserRepository-1] UpdateDataUser: %v", tx.Error)
+
+		var pgErr *pgconn.PgError
+		if errors.As(tx.Error, &pgErr) && pgErr.Code == "23505" {
+			return message.ErrEmailAlreadyExists
+		}
+
 		return tx.Error
 	}
 
@@ -330,6 +343,11 @@ func (u *userRepository) CreateCustomer(ctx context.Context, user entity.UserEnt
 	}
 
 	if err = u.db.WithContext(ctx).Create(&modelUser).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return 0, message.ErrEmailAlreadyExists
+		}
+
 		log.Errorf("[UserRepository-2] CreateCustomer: %v", err)
 		return 0, err
 	}
@@ -377,7 +395,16 @@ func (u *userRepository) UpdateCustomer(ctx context.Context, user entity.UserEnt
 		Select(updateColumns).
 		Updates(&modelUser).Error
 
-	return err
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return message.ErrEmailAlreadyExists
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (u *userRepository) DeleteCustomer(ctx context.Context, customerID int64) error {
