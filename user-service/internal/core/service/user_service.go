@@ -116,7 +116,7 @@ func (u *userService) CreateUserAccount(ctx context.Context, user entity.UserEnt
 		return err
 	}
 
-	urlVerify := fmt.Sprintf("http://localhost:8080/verify-account?token=%s", token)
+	urlVerify := fmt.Sprintf("%s/auth/verify-account?token=%s", u.cfg.App.UrlFrontEnd, token)
 	messageParam := fmt.Sprintf("Please verify your email address by clicking this link: %s", urlVerify)
 	go func() {
 		err = publisher.PublishMessage(userID, user.Email, messageParam, utils.NOTIF_EMAIL_VERIFICATION, "Verify Your Account")
@@ -148,7 +148,7 @@ func (u *userService) ForgotPassword(ctx context.Context, user entity.UserEntity
 		return err
 	}
 
-	urlForgot := fmt.Sprintf("%s/forgot-password?token=%s", u.cfg.App.UrlForgotPassword, token)
+	urlForgot := fmt.Sprintf("%s/auth/update-password?token=%s", u.cfg.App.UrlForgotPassword, token)
 	messageParam := fmt.Sprintf("Please reset your password by clicking this link: %s", urlForgot)
 	go func() {
 		err = publisher.PublishMessage(user.ID, user.Email, messageParam, utils.NOTIF_EMAIL_FORGOT_PASSWORD, "Reset Your Password")
