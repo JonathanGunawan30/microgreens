@@ -9,4 +9,5 @@ var (
 	ErrProductNotFound       = errors.New("product not found")
 	ErrFileTooLarge          = errors.New("file size exceeds the maximum limit of 1 MB")
 	ErrInvalidMime           = errors.New("invalid file type, only PNG, JPG, and WEBP are allowed")
+	ErrProductLTZero         = errors.New("quantity must be greater than 0")
 )

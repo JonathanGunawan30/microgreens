@@ -1,14 +1,14 @@
 package entity
 
 type CategoryEntity struct {
-	ID           int64
-	ParentID     *int64
-	Name         string
-	Icon         string
-	Status       bool
-	Slug         string
-	Description  string
-	ProductCount int64
+	ID           int64  `json:"id"`
+	ParentID     *int64 `json:"parent_id"`
+	Name         string `json:"name"`
+	Icon         string `json:"icon"`
+	Status       bool   `json:"status"`
+	Slug         string `json:"slug"`
+	Description  string `json:"description"`
+	ProductCount int64  `json:"product_count"`
 }
 
 type QueryStringCategory struct {

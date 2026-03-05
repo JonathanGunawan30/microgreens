@@ -62,14 +62,24 @@ func (p *productHandler) GetAllAdminProducts(c echo.Context) error {
 	)
 
 	search := c.QueryParam("search")
-	orderBy := "created_at"
-	if c.QueryParam("orderBy") != "" {
-		orderBy = c.QueryParam("orderBy")
-	}
 
+	orderBy := "created_at"
 	orderType := "desc"
-	if c.QueryParam("orderType") != "" {
-		orderType = c.QueryParam("orderType")
+
+	orderParam := c.QueryParam("orderBy")
+
+	switch orderParam {
+	case "price_asc":
+		orderBy = "sale_price"
+		orderType = "asc"
+
+	case "price_desc":
+		orderBy = "sale_price"
+		orderType = "desc"
+
+	case "newest":
+		orderBy = "id"
+		orderType = "desc"
 	}
 
 	var page int64 = 1
@@ -483,19 +493,19 @@ func (p *productHandler) GetShopProducts(c echo.Context) error {
 	orderBy := "created_at"
 	orderType := "desc"
 
-	sortParam := c.QueryParam("sort")
-	switch sortParam {
-	case "price_low":
+	orderParam := c.QueryParam("orderBy")
+
+	switch orderParam {
+	case "price_asc":
 		orderBy = "sale_price"
 		orderType = "asc"
-	case "price_high":
+
+	case "price_desc":
 		orderBy = "sale_price"
 		orderType = "desc"
-	case "oldest":
-		orderBy = "created_at"
-		orderType = "asc"
-	default:
-		orderBy = "created_at"
+
+	case "newest":
+		orderBy = "id"
 		orderType = "desc"
 	}
 
@@ -594,11 +604,14 @@ func (p *productHandler) GetHomeProductDetail(c echo.Context) error {
 		ID:           product.ID,
 		Name:         product.Name,
 		CategoryName: product.CategorySlug,
+		Description:  product.Description,
 		Unit:         product.Unit,
 		Image:        product.Image,
 		SalePrice:    product.SalePrice,
+		RegulerPrice: product.RegulerPrice,
 		Weight:       product.Weight,
 		Child:        childResponses,
+		Stock:        product.Stock,
 	}
 
 	resp.Message = "Success"

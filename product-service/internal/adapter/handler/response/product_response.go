@@ -77,6 +77,8 @@ type ProductHomeDetailResponse struct {
 	Unit         string                     `json:"unit"`
 	Image        string                     `json:"image"`
 	SalePrice    int64                      `json:"sale_price"`
+	RegulerPrice int64                      `json:"reguler_price"`
+	Stock        int64                      `json:"stock"`
 	Weight       int64                      `json:"weight"`
 	Child        []ProductChildHomeResponse `json:"child"`
 }
