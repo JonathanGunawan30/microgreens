@@ -41,10 +41,12 @@ func RunServer() {
 
 	categoryRepository := repository.NewCategoryRepository(db.DB)
 	productRepository := repository.NewProductRepository(db.DB, elasticsearchClient)
+	cartRepository := repository.NewCartRedisRepository(redisClient)
 
 	categoryService := service.NewCategoryService(categoryRepository)
-	productService := service.NewProductService(productRepository, rabbitMQClient, cfg.RabbitMQ.QueueEsIndexing)
+	productService := service.NewProductService(productRepository, rabbitMQClient, cfg.RabbitMQ.QueueEsIndexing, categoryRepository)
 	imageService := service.NewImageService(supabaseStorage)
+	cartService := service.NewCartService(cartRepository, productRepository)
 
 	e := echo.New()
 	e.Use(middleware.CORS())
@@ -63,6 +65,7 @@ func RunServer() {
 	handler.NewCategoryHandler(e, categoryService, cfg, redisClient)
 	handler.NewProductHandler(e, productService, cfg, redisClient)
 	handler.NewUploadImage(e, imageService, cfg, redisClient)
+	handler.NewCartHandler(e, cartService, cfg, redisClient)
 
 	go func() {
 		if cfg.App.AppPort == "" {

@@ -5,6 +5,7 @@ import (
 	"product-service/internal/adapter/message"
 	"product-service/internal/adapter/repository"
 	"product-service/internal/core/domain/entity"
+	msg "product-service/utils/message"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -19,14 +20,20 @@ type ProductServiceInterface interface {
 	GetHomeProducts(ctx context.Context, limit int) ([]entity.ProductEntity, error)
 }
 
-func NewProductService(repo repository.ProductRepositoryInterface, rabbitmq *amqp.Connection, esQueueName string) ProductServiceInterface {
-	return &productService{repo: repo, rabbitmq: rabbitmq, esQueueName: esQueueName}
+func NewProductService(repo repository.ProductRepositoryInterface, rabbitmq *amqp.Connection, esQueueName string, repoCategory repository.CategoryRepositoryInterface) ProductServiceInterface {
+	return &productService{
+		repo:         repo,
+		rabbitmq:     rabbitmq,
+		esQueueName:  esQueueName,
+		repoCategory: repoCategory,
+	}
 }
 
 type productService struct {
-	repo        repository.ProductRepositoryInterface
-	rabbitmq    *amqp.Connection
-	esQueueName string
+	repo         repository.ProductRepositoryInterface
+	repoCategory repository.CategoryRepositoryInterface
+	rabbitmq     *amqp.Connection
+	esQueueName  string
 }
 
 func (p *productService) GetAllProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error) {
@@ -44,7 +51,22 @@ func (p *productService) SearchProducts(ctx context.Context, query entity.QueryS
 }
 
 func (p *productService) GetProductByID(ctx context.Context, productID int64) (*entity.ProductEntity, error) {
-	return p.repo.GetProductByID(ctx, productID)
+	result, err := p.repo.GetProductByID(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
+
+	resultCategory, err := p.repoCategory.GetCategoryBySlug(ctx, result.CategorySlug)
+	if err != nil {
+		return nil, err
+	}
+
+	if resultCategory == nil {
+		return nil, msg.ErrCategoryNotFound
+	}
+
+	result.CategoryName = resultCategory.Name
+	return result, nil
 }
 
 func (p *productService) CreateProduct(ctx context.Context, product entity.ProductEntity) error {

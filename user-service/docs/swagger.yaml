@@ -1,0 +1,1101 @@
+basePath: /
+definitions:
+  request.CustomerRequest:
+    properties:
+      address:
+        maxLength: 500
+        type: string
+      email:
+        maxLength: 255
+        type: string
+      lat:
+        maxLength: 50
+        type: string
+      lng:
+        maxLength: 50
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 72
+        minLength: 6
+        type: string
+      phone:
+        maxLength: 17
+        type: string
+      photo:
+        maxLength: 255
+        type: string
+    required:
+    - address
+    - email
+    - lat
+    - lng
+    - name
+    - password
+    - phone
+    type: object
+  request.ForgotPasswordRequest:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+    required:
+    - email
+    type: object
+  request.RoleRequest:
+    properties:
+      name:
+        maxLength: 255
+        type: string
+    required:
+    - name
+    type: object
+  request.SignInRequest:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 72
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  request.SignUpRequest:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 72
+        minLength: 6
+        type: string
+      password_confirmation:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  request.UpdateCustomerRequest:
+    properties:
+      address:
+        maxLength: 500
+        type: string
+      email:
+        maxLength: 255
+        type: string
+      lat:
+        maxLength: 50
+        type: string
+      lng:
+        maxLength: 50
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      phone:
+        maxLength: 17
+        type: string
+      photo:
+        maxLength: 255
+        type: string
+    required:
+    - address
+    - email
+    - lat
+    - lng
+    - name
+    - phone
+    type: object
+  request.UpdateDataUserRequest:
+    properties:
+      address:
+        maxLength: 500
+        type: string
+      email:
+        maxLength: 255
+        type: string
+      lat:
+        maxLength: 50
+        type: string
+      lng:
+        maxLength: 50
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      phone:
+        maxLength: 17
+        minLength: 10
+        type: string
+      photo:
+        maxLength: 255
+        type: string
+    required:
+    - address
+    - email
+    - lat
+    - lng
+    - name
+    - phone
+    - photo
+    type: object
+  request.UpdatePasswordRequest:
+    properties:
+      password:
+        type: string
+      password_confirmation:
+        type: string
+      password_new:
+        maxLength: 72
+        minLength: 6
+        type: string
+      token:
+        maxLength: 255
+        type: string
+    required:
+    - password_new
+    - token
+    type: object
+  request.UpdateProfilePasswordRequest:
+    properties:
+      confirm_password:
+        type: string
+      current_password:
+        maxLength: 72
+        minLength: 6
+        type: string
+      new_password:
+        maxLength: 72
+        minLength: 6
+        type: string
+    required:
+    - confirm_password
+    - current_password
+    - new_password
+    type: object
+  response.CustomerResponse:
+    properties:
+      address:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      lat:
+        type: string
+      lng:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      photo:
+        type: string
+      role:
+        type: string
+      role_id:
+        type: integer
+    type: object
+  response.DefaultResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  response.DefaultResponseWithPagination:
+    properties:
+      data: {}
+      message:
+        type: string
+      pagination:
+        $ref: '#/definitions/response.PaginationMeta'
+    type: object
+  response.PaginationMeta:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total_count:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+  response.ProfileResponse:
+    properties:
+      address:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      lat:
+        type: string
+      lng:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      photo:
+        type: string
+      role:
+        type: string
+    type: object
+  response.RoleResponse:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  response.SignInResponse:
+    properties:
+      access_token:
+        type: string
+      address:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      lat:
+        type: string
+      lng:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is a microservice for user management
+  title: User Service API
+  version: "1.0"
+paths:
+  /admin/customers:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of customers with optional search and sorting
+      parameters:
+      - description: Search by name or email
+        in: query
+        name: search
+        type: string
+      - description: 'Order by field (default: created_at)'
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order type ASC or DESC (default: DESC)'
+        in: query
+        name: order_type
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponseWithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.ProfileResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all customers
+      tags:
+      - customers
+    post:
+      consumes:
+      - application/json
+      description: Create a new customer account
+      parameters:
+      - description: Create Customer Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Create customer
+      tags:
+      - customers
+  /admin/customers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete customer by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete customer
+      tags:
+      - customers
+    get:
+      consumes:
+      - application/json
+      description: Get customer detail by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CustomerResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get customer by ID
+      tags:
+      - customers
+    put:
+      consumes:
+      - application/json
+      description: Update customer information by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Customer Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateCustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Update customer data
+      tags:
+      - customers
+  /admin/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all roles
+      parameters:
+      - description: Search roles by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.RoleResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all roles
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Create a new role with name
+      parameters:
+      - description: Role Name
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.RoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Create new role
+      tags:
+      - roles
+  /admin/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete role by its ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete role
+      tags:
+      - roles
+    get:
+      consumes:
+      - application/json
+      description: Get role details by its ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.RoleResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get role by ID
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: Update role name by its ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Role Name
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.RoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Update role
+      tags:
+      - roles
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revoke user session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: User sign out
+      tags:
+      - auth
+  /auth/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current authenticated user profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProfileResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update authenticated user's profile data
+      parameters:
+      - description: Update Data User Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateDataUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Update profile data
+      tags:
+      - users
+  /auth/profile/image-upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a profile image to storage
+      parameters:
+      - description: Image File
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload profile image
+      tags:
+      - users
+  /auth/profile/password:
+    patch:
+      consumes:
+      - application/json
+      description: Update authenticated user's password
+      parameters:
+      - description: Update Profile Password Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateProfilePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Update profile password
+      tags:
+      - users
+  /forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Send password reset link to email
+      parameters:
+      - description: Forgot Password Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Forgot password
+      tags:
+      - auth
+  /signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Sign In Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SignInResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: User sign in
+      tags:
+      - auth
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: Sign Up Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: User sign up
+      tags:
+      - auth
+  /update-password:
+    put:
+      consumes:
+      - application/json
+      description: Update user password using reset token
+      parameters:
+      - description: Update Password Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Update password (via reset link)
+      tags:
+      - auth
+  /verify-account:
+    get:
+      consumes:
+      - application/json
+      description: Verify user account using token from email
+      parameters:
+      - description: Verification Token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SignInResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Verify account
+      tags:
+      - auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
