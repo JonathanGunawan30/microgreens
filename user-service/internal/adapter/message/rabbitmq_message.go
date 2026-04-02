@@ -2,26 +2,21 @@ package message
 
 import (
 	"encoding/json"
-	"user-service/config"
+	"user-service/internal/core/domain/entity"
 	"user-service/utils"
 
 	"github.com/labstack/gommon/log"
-	"github.com/rabbitmq/amqp091-go"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func PublishMessage(userID int64, email, message, queueName, subject string) error {
-	conn, err := config.NewConfig().NewRabbitMQClient()
-
-	if err != nil {
-		log.Errorf("[PublishMessage-1] Failed to connect to RabbitMQ: %v", err)
-		return err
+func PublishMessage(conn *amqp.Connection, userID int64, email, message, queueName, subject string) error {
+	if conn == nil {
+		log.Errorf("[PublishMessage-0] Connection is nil")
+		return nil
 	}
-
-	defer conn.Close()
-
 	ch, err := conn.Channel()
 	if err != nil {
-		log.Errorf("[PublishMessage-2] Failed to open a channel: %v", err)
+		log.Errorf("[PublishMessage-1] Failed to open channel: %v", err)
 		return err
 	}
 	defer ch.Close()
@@ -53,8 +48,57 @@ func PublishMessage(userID int64, email, message, queueName, subject string) err
 	}
 
 	return ch.Publish("", queue.Name, false, false,
-		amqp091.Publishing{
+		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        body,
 		})
+}
+
+func PublishUserEvent(conn *amqp.Connection, user entity.UserEntity, exchangeName string) error {
+	if conn == nil {
+		log.Errorf("[PublishUserEvent-0] Connection is nil")
+		return nil
+	}
+	ch, err := conn.Channel()
+	if err != nil {
+		log.Errorf("[PublishUserEvent-1] Failed to open channel: %v", err)
+		return err
+	}
+
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil)
+	if err != nil {
+		log.Errorf("[PublishUserEvent-2] Failed to declare exchange: %v", err)
+		return err
+	}
+
+	payload := entity.UserEvent{
+		UserID:  user.ID,
+		Name:    user.Name,
+		Email:   user.Email,
+		Phone:   user.Phone,
+		Address: user.Address,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		log.Errorf("[PublishUserEvent-3] Failed to marshal: %v", err)
+		return err
+	}
+
+	err = ch.Publish(exchangeName, "", false, false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp.Persistent,
+		})
+
+	if err != nil {
+		log.Errorf("[PublishUserEvent-4] Failed to publish: %v", err)
+		return err
+	}
+
+	log.Infof("[PublishUserEvent] Published user event for user ID %d", user.ID)
+	return nil
 }

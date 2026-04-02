@@ -43,12 +43,17 @@ type Supabase struct {
 	Bucket string `json:"bucket"`
 }
 
+type ExchangeName struct {
+	UserEvent string `json:"user_event"`
+}
+
 type Config struct {
-	App      App            `json:"app"`
-	Psql     PsqlDB         `json:"psql"`
-	Redis    RedisConfig    `json:"redis"`
-	RabbitMQ RabbitmqConfig `json:"rabbitmq"`
-	Supabase Supabase       `json:"supabase"`
+	App          App            `json:"app"`
+	Psql         PsqlDB         `json:"psql"`
+	Redis        RedisConfig    `json:"redis"`
+	RabbitMQ     RabbitmqConfig `json:"rabbitmq"`
+	ExchangeName ExchangeName   `json:"exchange_name"`
+	Supabase     Supabase       `json:"supabase"`
 }
 
 func NewConfig() *Config {
@@ -81,6 +86,9 @@ func NewConfig() *Config {
 			Port:     viper.GetString("RABBITMQ_PORT"),
 			Username: viper.GetString("RABBITMQ_USERNAME"),
 			Password: viper.GetString("RABBITMQ_PASSWORD"),
+		},
+		ExchangeName: ExchangeName{
+			UserEvent: viper.GetString("EXCHANGE_USER_EVENT"),
 		},
 		Supabase: Supabase{
 			URL:    viper.GetString("SUPABASE_STORAGE_URL"),
