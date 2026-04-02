@@ -12,13 +12,23 @@ import (
 	"user-service/internal/adapter/storage"
 	"user-service/internal/core/service"
 	"user-service/utils/validator"
+	_ "user-service/docs"
 
 	"github.com/go-playground/validator/v10/translations/en"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
+// @title User Service API
+// @version 1.0
+// @description This is a microservice for user management
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func RunServer() {
 	cfg := config.NewConfig()
 	db, err := cfg.ConnectionPostgres()
@@ -26,6 +36,13 @@ func RunServer() {
 		log.Fatalf("[RunServer-1] Failed to connect to database: %v", err)
 		return
 	}
+
+	rabbitMQClient, err := cfg.NewRabbitMQClient()
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbbitMQ: %v", err)
+	}
+	defer rabbitMQClient.Close()
+
 	jwtService := service.NewJwtService(cfg)
 	redisClient := config.NewRedisClient(cfg)
 	supabaseStorage := storage.NewSupabaseStorage(cfg)
@@ -34,7 +51,7 @@ func RunServer() {
 	tokenRepo := repository.NewVerificationTokenRepository(db.DB)
 	roleRepo := repository.NewRoleRepository(db.DB)
 
-	userService := service.NewUserService(userRepo, cfg, jwtService, redisClient, tokenRepo)
+	userService := service.NewUserService(userRepo, cfg, jwtService, redisClient, rabbitMQClient, tokenRepo)
 	imageService := service.NewImageService(supabaseStorage)
 	roleService := service.NewRoleService(roleRepo)
 
@@ -51,6 +68,8 @@ func RunServer() {
 	e.GET("/api/check", func(c echo.Context) error {
 		return c.String(200, "OK")
 	})
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	handler.NewUserHandler(e, userService, cfg, redisClient)
 	handler.NewUploadImage(e, imageService, cfg, redisClient)

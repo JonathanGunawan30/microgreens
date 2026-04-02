@@ -31,6 +31,19 @@ func NewUploadImage(e *echo.Echo, imageService service.ImageServiceInterface, cf
 	return uploadImageHandler
 }
 
+// UploadImage godoc
+// @Summary Upload profile image
+// @Description Upload a profile image to storage
+// @Tags users
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param image formData file true "Image File"
+// @Success 200 {object} response.DefaultResponse{data=map[string]string} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /auth/profile/image-upload [post]
 func (u *UploadImage) UploadImage(c echo.Context) error {
 	var resp = response.DefaultResponse{}
 	file, err := c.FormFile("image")

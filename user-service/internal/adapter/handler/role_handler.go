@@ -46,6 +46,17 @@ func NewRoleHandler(e *echo.Echo, roleService service.RoleServiceInterface, cfg 
 	return roleHandler
 }
 
+// GetAllRole godoc
+// @Summary Get all roles
+// @Description Get list of all roles
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param search query string false "Search roles by name"
+// @Success 200 {object} response.DefaultResponse{data=[]response.RoleResponse} "Success"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/roles [get]
 func (r *roleHandler) GetAllRole(c echo.Context) error {
 	var (
 		respRole []response.RoleResponse
@@ -75,6 +86,19 @@ func (r *roleHandler) GetAllRole(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetRoleByID godoc
+// @Summary Get role by ID
+// @Description Get role details by its ID
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Role ID"
+// @Success 200 {object} response.DefaultResponse{data=response.RoleResponse} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/roles/{id} [get]
 func (r *roleHandler) GetRoleByID(c echo.Context) error {
 	var (
 		resp     = response.DefaultResponse{}
@@ -121,6 +145,19 @@ func (r *roleHandler) GetRoleByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// CreateRole godoc
+// @Summary Create new role
+// @Description Create a new role with name
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body request.RoleRequest true "Role Name"
+// @Success 201 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/roles [post]
 func (r *roleHandler) CreateRole(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -159,6 +196,21 @@ func (r *roleHandler) CreateRole(c echo.Context) error {
 	return c.JSON(http.StatusCreated, resp)
 }
 
+// UpdateRole godoc
+// @Summary Update role
+// @Description Update role name by its ID
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Role ID"
+// @Param request body request.RoleRequest true "Updated Role Name"
+// @Success 200 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/roles/{id} [put]
 func (r *roleHandler) UpdateRole(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -220,6 +272,20 @@ func (r *roleHandler) UpdateRole(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// DeleteRoleByID godoc
+// @Summary Delete role
+// @Description Delete role by its ID
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Role ID"
+// @Success 200 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 409 {object} response.DefaultResponse "Conflict"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/roles/{id} [delete]
 func (r *roleHandler) DeleteRoleByID(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
