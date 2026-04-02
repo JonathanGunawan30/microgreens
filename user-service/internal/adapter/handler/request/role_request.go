@@ -1,5 +1,5 @@
 package request
 
 type RoleRequest struct {
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name" validate:"required,max=255"`
 }
