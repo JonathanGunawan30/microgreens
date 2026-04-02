@@ -20,6 +20,7 @@ type UserRepositoryInterface interface {
 	UpdateUserVerified(ctx context.Context, userID int64) (*entity.UserEntity, error)
 	UpdatePasswordByID(ctx context.Context, user entity.UserEntity) error
 	GetUserByID(ctx context.Context, userID int64) (*entity.UserEntity, error)
+	GetUserHashedPasswordByID(ctx context.Context, userID int64) (string, error)
 	UpdateDataUser(ctx context.Context, user entity.UserEntity) error
 
 	// Customer
@@ -200,6 +201,23 @@ func (u *userRepository) GetUserByID(ctx context.Context, userID int64) (*entity
 		RoleName:   modelUser.Roles[0].Name,
 		IsVerified: modelUser.IsVerified,
 	}, nil
+}
+
+func (u *userRepository) GetUserHashedPasswordByID(ctx context.Context, userID int64) (string, error) {
+	modelUser := model.User{}
+
+	tx := u.db.WithContext(ctx).Select("password").Where("id = ?", userID).Where("is_verified = ?", true).First(&modelUser)
+
+	if tx.Error != nil {
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			log.Errorf("[UserRepository-1] GetUserHashedPasswordByID: User not found")
+			return "", message.ErrUserNotFound
+		}
+		log.Errorf("[UserRepository-2] GetUserHashedPasswordByID: %v", tx.Error)
+		return "", tx.Error
+	}
+
+	return modelUser.Password, nil
 }
 
 func (u *userRepository) UpdateDataUser(ctx context.Context, user entity.UserEntity) error {

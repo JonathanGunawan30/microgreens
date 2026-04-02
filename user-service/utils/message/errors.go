@@ -14,4 +14,5 @@ var (
 	ErrRoleNotFound       = errors.New("role not found")
 	ErrRoleAssociated     = errors.New("role cannot be deleted because it is still assigned to one or more users")
 	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrWrongPassword      = errors.New("password is wrong")
 )
