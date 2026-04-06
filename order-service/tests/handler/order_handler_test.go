@@ -10,7 +10,7 @@ import (
 	"order-service/internal/adapter/handler"
 	"order-service/internal/adapter/handler/request"
 	"order-service/internal/core/domain/entity"
-	"order-service/mocks"
+	"order-service/tests/mocks"
 	"order-service/utils/message"
 	"order-service/utils/validator"
 	"testing"
