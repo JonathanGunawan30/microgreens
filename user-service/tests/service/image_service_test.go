@@ -5,7 +5,7 @@ import (
 	"net/textproto"
 	"testing"
 	service2 "user-service/internal/core/service"
-	"user-service/internal/mocks"
+	"user-service/tests/mocks"
 	"user-service/utils/message"
 
 	"github.com/stretchr/testify/assert"

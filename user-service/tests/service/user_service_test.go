@@ -7,7 +7,7 @@ import (
 	"user-service/config"
 	"user-service/internal/core/domain/entity"
 	service2 "user-service/internal/core/service"
-	"user-service/internal/mocks"
+	mocks2 "user-service/tests/mocks"
 	"user-service/utils/conv"
 	"user-service/utils/message"
 
@@ -16,15 +16,15 @@ import (
 )
 
 func setupUserServiceTest() (
-	*mocks.UserRepositoryInterface,
-	*mocks.JwtServiceInterface,
-	*mocks.VerificationTokenRepositoryInterface,
+	*mocks2.UserRepositoryInterface,
+	*mocks2.JwtServiceInterface,
+	*mocks2.VerificationTokenRepositoryInterface,
 	service2.UserServiceInterface,
 	*config.Config,
 ) {
-	mockRepo := new(mocks.UserRepositoryInterface)
-	mockJwt := new(mocks.JwtServiceInterface)
-	mockRepoToken := new(mocks.VerificationTokenRepositoryInterface)
+	mockRepo := new(mocks2.UserRepositoryInterface)
+	mockJwt := new(mocks2.JwtServiceInterface)
+	mockRepoToken := new(mocks2.VerificationTokenRepositoryInterface)
 
 	cfg := &config.Config{
 		App: config.App{
@@ -35,7 +35,7 @@ func setupUserServiceTest() (
 			UserEvent: "user_event",
 		},
 	}
-	
+
 	userService := service2.NewUserService(mockRepo, cfg, mockJwt, nil, nil, mockRepoToken)
 	return mockRepo, mockJwt, mockRepoToken, userService, cfg
 }

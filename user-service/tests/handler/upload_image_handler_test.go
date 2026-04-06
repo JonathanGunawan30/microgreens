@@ -8,7 +8,7 @@ import (
 	"testing"
 	"user-service/config"
 	"user-service/internal/adapter/handler"
-	"user-service/internal/mocks"
+	"user-service/tests/mocks"
 	"user-service/utils/message"
 
 	"github.com/labstack/echo/v4"
