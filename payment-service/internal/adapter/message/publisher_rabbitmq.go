@@ -11,7 +11,11 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func PublishPaymentSuccess(conn *amqp.Connection, payment entity.PaymentEntity, queueName string) error {
+func PublishUpdatePaymentMethod(conn *amqp.Connection, payment entity.PaymentEntity, exchangeName string) error {
+	if conn == nil {
+		log.Errorf("[PublishUpdatePaymentMethod] RabbitMQ connection is nil, skipping publish")
+		return nil
+	}
 	ch, err := conn.Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
@@ -19,9 +23,9 @@ func PublishPaymentSuccess(conn *amqp.Connection, payment entity.PaymentEntity, 
 
 	defer ch.Close()
 
-	_, err = ch.QueueDeclare(queueName, true, false, false, false, nil)
+	err = ch.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil)
 	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %w", err)
+		return fmt.Errorf("failed to declare exchange: %w", err)
 	}
 
 	data := map[string]any{
@@ -37,7 +41,7 @@ func PublishPaymentSuccess(conn *amqp.Connection, payment entity.PaymentEntity, 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err = ch.PublishWithContext(ctx, "", queueName, false, false,
+	err = ch.PublishWithContext(ctx, exchangeName, "", false, false,
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        body,
@@ -48,6 +52,6 @@ func PublishPaymentSuccess(conn *amqp.Connection, payment entity.PaymentEntity, 
 		return fmt.Errorf("failed to publish message: %w", err)
 	}
 
-	log.Infof("Successfully update payment: %v", payment)
+	log.Infof("Successfully publish update payment: %v, to exchange: %s", payment, exchangeName)
 	return nil
 }
