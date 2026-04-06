@@ -32,6 +32,14 @@ func NewWebSocketHandler(e *echo.Echo) WebSocketHandler {
 	return wsHandler
 }
 
+// WebSocketHandler godoc
+// @Summary WebSocket connection
+// @Description Establish a WebSocket connection for real-time notifications
+// @Tags websocket
+// @Param user_id query int true "User ID"
+// @Success 101 {string} string "Switching Protocols"
+// @Failure 400 {string} string "Bad Request - Invalid user_id"
+// @Router /ws [get]
 func (w *webSocketHandler) WebSocketHandler(c echo.Context) error {
 	userIDStr := c.QueryParam("user_id")
 	userID, err := strconv.Atoi(userIDStr)
@@ -44,8 +52,8 @@ func (w *webSocketHandler) WebSocketHandler(c echo.Context) error {
 		return err
 	}
 
-	ws.AddWebSocketConn(userID, conn)
-	defer ws.RemoveWebSocketConn(userID)
+	ws.AddWebSocketConn(int64(userID), conn)
+	defer ws.RemoveWebSocketConn(int64(userID))
 	defer conn.Close()
 
 	for {
