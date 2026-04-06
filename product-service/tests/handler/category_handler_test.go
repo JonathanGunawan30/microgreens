@@ -10,7 +10,7 @@ import (
 	handler2 "product-service/internal/adapter/handler"
 	"product-service/internal/adapter/handler/request"
 	"product-service/internal/core/domain/entity"
-	svcMocks "product-service/mocks/service"
+	svcMocks "product-service/tests/mocks/service"
 	"product-service/utils/message"
 	"testing"
 

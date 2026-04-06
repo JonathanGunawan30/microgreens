@@ -6,7 +6,7 @@ import (
 	"testing"
 	"user-service/internal/core/domain/entity"
 	service2 "user-service/internal/core/service"
-	"user-service/internal/mocks"
+	"user-service/tests/mocks"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -6,7 +6,7 @@ import (
 	"order-service/config"
 	"order-service/internal/core/domain/entity"
 	"order-service/internal/core/service"
-	"order-service/mocks"
+	mocks2 "order-service/tests/mocks"
 	"order-service/utils/message"
 	"testing"
 	"time"
@@ -27,7 +27,7 @@ func generateValidToken(userID int64, secretKey string) string {
 }
 
 func TestGetAllCustomerOrders(t *testing.T) {
-	mockRepo := new(mocks.OrderRepositoryInterface)
+	mockRepo := new(mocks2.OrderRepositoryInterface)
 	cfg := &config.Config{}
 	cfg.App.JwtSecretKey = "secret"
 
@@ -70,10 +70,10 @@ func TestGetAllCustomerOrders(t *testing.T) {
 }
 
 func TestGetAllOrders(t *testing.T) {
-	mockRepo := new(mocks.OrderRepositoryInterface)
-	mockUserSnapshotRepo := new(mocks.UserSnapshotRepositoryInterface)
-	mockProdSnapshotRepo := new(mocks.ProductSnapshotRepositoryInterface)
-	mockElasticRepo := new(mocks.ElasticRepositoryInterface)
+	mockRepo := new(mocks2.OrderRepositoryInterface)
+	mockUserSnapshotRepo := new(mocks2.UserSnapshotRepositoryInterface)
+	mockProdSnapshotRepo := new(mocks2.ProductSnapshotRepositoryInterface)
+	mockElasticRepo := new(mocks2.ElasticRepositoryInterface)
 	cfg := &config.Config{}
 
 	svc := service.NewOrderService(mockRepo, mockUserSnapshotRepo, mockProdSnapshotRepo, cfg, nil, mockElasticRepo)
@@ -120,8 +120,8 @@ func TestGetAllOrders(t *testing.T) {
 }
 
 func TestGetOrderByID(t *testing.T) {
-	mockRepo := new(mocks.OrderRepositoryInterface)
-	mockElasticRepo := new(mocks.ElasticRepositoryInterface)
+	mockRepo := new(mocks2.OrderRepositoryInterface)
+	mockElasticRepo := new(mocks2.ElasticRepositoryInterface)
 	svc := service.NewOrderService(mockRepo, nil, nil, nil, nil, mockElasticRepo)
 	ctx := context.Background()
 
@@ -147,9 +147,9 @@ func TestGetOrderByID(t *testing.T) {
 }
 
 func TestCreateOrder(t *testing.T) {
-	mockRepo := new(mocks.OrderRepositoryInterface)
-	mockUserSnapshotRepo := new(mocks.UserSnapshotRepositoryInterface)
-	mockProdSnapshotRepo := new(mocks.ProductSnapshotRepositoryInterface)
+	mockRepo := new(mocks2.OrderRepositoryInterface)
+	mockUserSnapshotRepo := new(mocks2.UserSnapshotRepositoryInterface)
+	mockProdSnapshotRepo := new(mocks2.ProductSnapshotRepositoryInterface)
 	cfg := &config.Config{}
 	cfg.ExchangeName.OrderEvent = "order-event"
 	cfg.PublisherName.ProductUpdateStock = "update-stock"
@@ -241,8 +241,8 @@ func TestCreateOrder(t *testing.T) {
 }
 
 func TestUpdateStatusOrder(t *testing.T) {
-	mockRepo := new(mocks.OrderRepositoryInterface)
-	mockUserSnapshotRepo := new(mocks.UserSnapshotRepositoryInterface)
+	mockRepo := new(mocks2.OrderRepositoryInterface)
+	mockUserSnapshotRepo := new(mocks2.UserSnapshotRepositoryInterface)
 	cfg := &config.Config{}
 	cfg.PublisherName.PublisherUpdateStatus = "update-status"
 	cfg.PublisherName.EmailUpdateStatus = "email-status"
@@ -280,7 +280,7 @@ func TestUpdateStatusOrder(t *testing.T) {
 }
 
 func TestGetOrderByOrderCode(t *testing.T) {
-	mockRepo := new(mocks.OrderRepositoryInterface)
+	mockRepo := new(mocks2.OrderRepositoryInterface)
 	svc := service.NewOrderService(mockRepo, nil, nil, nil, nil, nil)
 	ctx := context.Background()
 

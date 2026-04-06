@@ -4,7 +4,7 @@ import (
 	"mime/multipart"
 	"net/textproto"
 	service2 "product-service/internal/core/service"
-	storageMocks "product-service/mocks/storage"
+	storageMocks "product-service/tests/mocks/storage"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

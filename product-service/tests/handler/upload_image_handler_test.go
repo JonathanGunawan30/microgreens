@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"product-service/config"
 	handler2 "product-service/internal/adapter/handler"
-	svcMocks "product-service/mocks/service"
+	svcMocks "product-service/tests/mocks/service"
 	"testing"
 
 	"github.com/labstack/echo/v4"

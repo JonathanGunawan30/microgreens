@@ -4,7 +4,7 @@ import (
 	"context"
 	"product-service/internal/core/domain/entity"
 	service2 "product-service/internal/core/service"
-	repoMocks "product-service/mocks/repository"
+	"product-service/tests/mocks/repository"
 	"product-service/utils/message"
 	"testing"
 
@@ -13,8 +13,8 @@ import (
 )
 
 func TestCartService_AddToCart(t *testing.T) {
-	cartRepo := new(repoMocks.CartRedisRepositoryInterface)
-	prodRepo := new(repoMocks.ProductRepositoryInterface)
+	cartRepo := new(mocks.CartRedisRepositoryInterface)
+	prodRepo := new(mocks.ProductRepositoryInterface)
 	svc := service2.NewCartService(cartRepo, prodRepo)
 	ctx := context.Background()
 
@@ -39,8 +39,8 @@ func TestCartService_AddToCart(t *testing.T) {
 }
 
 func TestCartService_GetCart(t *testing.T) {
-	cartRepo := new(repoMocks.CartRedisRepositoryInterface)
-	prodRepo := new(repoMocks.ProductRepositoryInterface)
+	cartRepo := new(mocks.CartRedisRepositoryInterface)
+	prodRepo := new(mocks.ProductRepositoryInterface)
 	svc := service2.NewCartService(cartRepo, prodRepo)
 	ctx := context.Background()
 

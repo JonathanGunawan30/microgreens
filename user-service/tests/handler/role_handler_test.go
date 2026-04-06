@@ -11,7 +11,7 @@ import (
 	"user-service/internal/adapter/handler"
 	"user-service/internal/adapter/handler/response"
 	"user-service/internal/core/domain/entity"
-	"user-service/internal/mocks"
+	"user-service/tests/mocks"
 	"user-service/utils/message"
 	"user-service/utils/validator"
 
