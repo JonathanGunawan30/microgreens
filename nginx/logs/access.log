@@ -1,0 +1,8 @@
+172.20.0.1 - - [06/Apr/2026:08:23:02 +0000] "GET / HTTP/1.1" 404 555 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" rt=0.000 upstream=-
+172.20.0.1 - - [06/Apr/2026:08:23:02 +0000] "GET /favicon.ico HTTP/1.1" 404 555 "http://localhost/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" rt=0.000 upstream=-
+172.20.0.1 - - [06/Apr/2026:08:23:04 +0000] "GET / HTTP/1.1" 404 555 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" rt=0.000 upstream=-
+172.20.0.1 - - [06/Apr/2026:08:28:03 +0000] "GET /api/v1/signin HTTP/1.1" 405 33 "-" "curl/8.18.0" rt=0.014 upstream=172.20.0.6:8080
+172.20.0.1 - - [06/Apr/2026:08:28:15 +0000] "GET /api/v1/categories HTTP/1.1" 200 34 "-" "curl/8.18.0" rt=0.071 upstream=172.20.0.7:8081
+172.20.0.1 - - [06/Apr/2026:08:28:29 +0000] "GET /api/v1/categories HTTP/1.1" 200 34 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" rt=0.007 upstream=172.20.0.7:8081
+172.20.0.1 - - [06/Apr/2026:08:28:41 +0000] "GET /api/v1/categories HTTP/1.1" 200 34 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" rt=0.002 upstream=172.20.0.7:8081
+172.20.0.1 - - [06/Apr/2026:08:29:47 +0000] "POST /api/v1/signin HTTP/1.1" 422 62 "-" "curl/8.18.0" rt=0.012 upstream=172.20.0.6:8080
