@@ -32,7 +32,6 @@ type RabbitmqConfig struct {
 	Username         string `json:"username" mapstructure:"RABBITMQ_USER"`
 	Password         string `json:"password" mapstructure:"RABBITMQ_PASSWORD"`
 	QueueStockUpdate string `json:"queue_stock_update" mapstructure:"RABBITMQ_QUEUE_STOCK_UPDATE"`
-	QueueEsIndexing  string `json:"queue_es_indexing" mapstructure:"RABBITMQ_QUEUE_ES_INDEXING"`
 }
 
 type Supabase struct {
@@ -47,6 +46,14 @@ type Elasticsearch struct {
 	Password string `json:"password"`
 }
 
+type QueueName struct {
+	ProductES string `json:"product_es"`
+}
+
+type ExchangeName struct {
+	ProductEvent string `json:"product_event"`
+}
+
 type Config struct {
 	App           App            `json:"app"`
 	Psql          PsqlDB         `json:"psql"`
@@ -54,6 +61,8 @@ type Config struct {
 	RabbitMQ      RabbitmqConfig `json:"rabbitmq"`
 	Supabase      Supabase       `json:"supabase"`
 	Elasticsearch Elasticsearch  `json:"elasticsearch"`
+	ExchangeName  ExchangeName   `json:"exchange_name"`
+	QueueName     QueueName      `json:"queue_name"`
 }
 
 func NewConfig() *Config {
@@ -84,7 +93,6 @@ func NewConfig() *Config {
 			Username:         viper.GetString("RABBITMQ_USERNAME"),
 			Password:         viper.GetString("RABBITMQ_PASSWORD"),
 			QueueStockUpdate: viper.GetString("RABBITMQ_QUEUE_STOCK_UPDATE"),
-			QueueEsIndexing:  viper.GetString("RABBITMQ_QUEUE_ES_INDEXING"),
 		},
 		Supabase: Supabase{
 			URL:    viper.GetString("SUPABASE_STORAGE_URL"),
@@ -95,6 +103,12 @@ func NewConfig() *Config {
 			Host:     viper.GetString("ELASTICSEARCH_HOST"),
 			Username: viper.GetString("ELASTICSEARCH_USERNAME"),
 			Password: viper.GetString("ELASTICSEARCH_PASSWORD"),
+		},
+		ExchangeName: ExchangeName{
+			ProductEvent: viper.GetString("EXCHANGE_PRODUCT_EVENT"),
+		},
+		QueueName: QueueName{
+			ProductES: viper.GetString("QUEUE_PRODUCT_ES"),
 		},
 	}
 }
