@@ -1,0 +1,514 @@
+definitions:
+  request.CreateOrderRequest:
+    properties:
+      buyer_id:
+        type: integer
+      order_date:
+        type: string
+      order_details:
+        items:
+          $ref: '#/definitions/request.OrderDetailRequest'
+        type: array
+      order_time:
+        type: string
+      payment_type:
+        maxLength: 50
+        type: string
+      remarks:
+        maxLength: 500
+        type: string
+      shipping_type:
+        maxLength: 20
+        type: string
+    required:
+    - buyer_id
+    - order_date
+    - order_details
+    - order_time
+    - payment_type
+    - shipping_type
+    type: object
+  request.OrderDetailRequest:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  request.OrderUpdateStatusRequest:
+    properties:
+      remarks:
+        maxLength: 500
+        type: string
+      status:
+        maxLength: 20
+        type: string
+    required:
+    - status
+    type: object
+  response.CustomerOrder:
+    properties:
+      customer_address:
+        type: string
+      customer_email:
+        type: string
+      customer_id:
+        type: integer
+      customer_name:
+        type: string
+      customer_phone:
+        type: string
+    type: object
+  response.DefaultResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  response.DefaultResponseWithPagination:
+    properties:
+      data: {}
+      message:
+        type: string
+      pagination:
+        $ref: '#/definitions/response.PaginationMeta'
+    type: object
+  response.OrderAdminDetail:
+    properties:
+      customer:
+        $ref: '#/definitions/response.CustomerOrder'
+      id:
+        type: integer
+      order_code:
+        type: string
+      order_date:
+        type: string
+      order_detail:
+        items:
+          $ref: '#/definitions/response.OrderDetail'
+        type: array
+      order_time:
+        type: string
+      payment_method:
+        type: string
+      product_image:
+        type: string
+      remarks:
+        type: string
+      shipping_fee:
+        type: integer
+      shipping_type:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: integer
+    type: object
+  response.OrderAdminList:
+    properties:
+      customer_name:
+        type: string
+      id:
+        type: integer
+      order_code:
+        type: string
+      order_date:
+        type: string
+      order_time:
+        type: string
+      payment_method:
+        type: string
+      product_image:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: integer
+    type: object
+  response.OrderCustomerList:
+    properties:
+      id:
+        type: integer
+      order_code:
+        type: string
+      order_date:
+        type: string
+      order_items:
+        items:
+          $ref: '#/definitions/response.OrderCustomerListItem'
+        type: array
+      order_time:
+        type: string
+      payment_method:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: integer
+    type: object
+  response.OrderCustomerListItem:
+    properties:
+      product_image:
+        type: string
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      unit:
+        type: string
+      weight:
+        type: integer
+    type: object
+  response.OrderDetail:
+    properties:
+      product_image:
+        type: string
+      product_name:
+        type: string
+      product_price:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+  response.PaginationMeta:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total_count:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /admin/orders:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of all orders for admin
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponseWithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.OrderAdminList'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all orders (admin)
+      tags:
+      - orders
+  /admin/orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get order detail by ID for admin
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.OrderAdminDetail'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get order by ID (admin)
+      tags:
+      - orders
+  /admin/orders/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Update order status by ID
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Status Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.OrderUpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict - Invalid status transition
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Update order status (admin)
+      tags:
+      - orders
+  /auth/orders:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of orders for authenticated customer
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponseWithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.OrderCustomerList'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all orders (customer)
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Create a new order for authenticated customer
+      parameters:
+      - description: Create Order Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Create order
+      tags:
+      - orders
+  /auth/orders/{code}/code:
+    get:
+      consumes:
+      - application/json
+      description: Get order detail by order code for authenticated customer
+      parameters:
+      - description: Order Code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.OrderAdminDetail'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get order by order code (customer)
+      tags:
+      - orders
+  /auth/orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get order detail by ID for authenticated customer
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.OrderAdminDetail'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get order by ID (customer)
+      tags:
+      - orders
+swagger: "2.0"

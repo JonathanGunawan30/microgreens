@@ -7,6 +7,8 @@ type OrderAdminList struct {
 	CustomerName  string `json:"customer_name"`
 	Status        string `json:"status"`
 	PaymentMethod string `json:"payment_method"`
+	OrderDate     string `json:"order_date"`
+	OrderTime     string `json:"order_time"`
 	TotalAmount   int64  `json:"total_amount"`
 }
 
@@ -14,7 +16,8 @@ type OrderAdminDetail struct {
 	ID            int64         `json:"id"`
 	OrderCode     string        `json:"order_code"`
 	ProductImage  string        `json:"product_image"`
-	OrderDateTime string        `json:"order_date_time"`
+	OrderDate     string        `json:"order_date"`
+	OrderTime     string        `json:"order_time"`
 	Status        string        `json:"status"`
 	PaymentMethod string        `json:"payment_method"`
 	ShippingFee   int64         `json:"shipping_fee"`
@@ -40,17 +43,23 @@ type OrderDetail struct {
 	Quantity     int64  `json:"quantity"`
 }
 
+type OrderCustomerListItem struct {
+	ProductName  string `json:"product_name"`
+	ProductImage string `json:"product_image"`
+	Weight       int64  `json:"weight"`
+	Unit         string `json:"unit"`
+	Quantity     int64  `json:"quantity"`
+}
+
 type OrderCustomerList struct {
-	ID            int64  `json:"id"`
-	OrderCode     string `json:"order_code"`
-	ProductImage  string `json:"product_image"`
-	Status        string `json:"status"`
-	PaymentMethod string `json:"payment_method"`
-	TotalAmount   int64  `json:"total_amount"`
-	Weight        int64  `json:"weight"`
-	Unit          string `json:"unit"`
-	Quantity      int64  `json:"quantity"`
-	OrderDateTime string `json:"order_datetime"`
+	ID            int64                   `json:"id"`
+	OrderCode     string                  `json:"order_code"`
+	Status        string                  `json:"status"`
+	PaymentMethod string                  `json:"payment_method"`
+	TotalAmount   int64                   `json:"total_amount"`
+	OrderDate     string                  `json:"order_date"`
+	OrderTime     string                  `json:"order_time"`
+	OrderItems    []OrderCustomerListItem `json:"order_items"`
 }
 type UserHttpClientResponse struct {
 	Message string `json:"message"`
