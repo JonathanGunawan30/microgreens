@@ -24,8 +24,13 @@ type CategoryListHomeResponse struct {
 	Slug string `json:"slug"`
 }
 
+type CategoryListShopChildResponse struct {
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
 type CategoryListShopResponse struct {
-	Name  string                      `json:"name"`
-	Slug  string                      `json:"slug"`
-	Child []*CategoryListShopResponse `json:"child,omitempty"`
+	Name  string                           `json:"name"`
+	Slug  string                           `json:"slug"`
+	Child []*CategoryListShopChildResponse `json:"child,omitempty"`
 }
