@@ -15,8 +15,10 @@ func RegisterNotificationRoutes(e *echo.Echo, handler *handler.NotificationHandl
 	e.Use(middleware.Recover())
 	mid := adapter.NewMiddlewareAdapter(cfg, redis)
 
-	authGroup := e.Group("auth", mid.CheckToken(cfg.App.JwtSecretKey))
+	authGroup := e.Group("/auth", mid.CheckToken(cfg.App.JwtSecretKey))
 
 	authGroup.GET("/notifications", handler.GetAll)
+	authGroup.PATCH("/notifications/read-all", handler.ReadAll)
 	authGroup.GET("/notifications/:id", handler.GetByID)
+	authGroup.PATCH("/notifications/:id/read", handler.Read)
 }

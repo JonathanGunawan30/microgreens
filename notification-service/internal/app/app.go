@@ -43,7 +43,7 @@ func RunServer() {
 
 	notificationRepository := repository.NewNotificationRepository(db.DB)
 
-	notificationService := service.NewNotificationService(smtp, notificationRepository)
+	notificationService := service.NewNotificationService(smtp, notificationRepository, cfg)
 
 	notificationHandler := handler.NewNotificationHandler(notificationService)
 
@@ -53,7 +53,9 @@ func RunServer() {
 	go message.ConsumeMessage(rabbitMQClient, constant.NOTIF_EMAIL_CREATE_CUSTOMER, notificationService)
 	go message.ConsumeMessage(rabbitMQClient, constant.NOTIF_EMAIL_UPDATE_STATUS_ORDER, notificationService)
 	go message.ConsumeMessage(rabbitMQClient, constant.TypePush, notificationService)
-	
+	go message.OrderEmailNotificationConsumer(rabbitMQClient, constant.ORDER_EMAIL_QUEUE, cfg.ExchangeName.OrderEvent, notificationService)
+	go message.OrderPushNotificationConsumer(rabbitMQClient, constant.ORDER_PUSH_QUEUE, cfg.ExchangeName.OrderEvent, notificationService)
+
 	e := echo.New()
 	e.Use(middleware.CORS())
 

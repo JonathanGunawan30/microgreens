@@ -66,6 +66,10 @@ func (m *middlewareAdapter) CheckToken(secretKey string) echo.MiddlewareFunc {
 			userID := int64(userIDFloat)
 			sessionKey := "session:" + strconv.FormatInt(userID, 10)
 
+			if m.redis == nil {
+				return next(c)
+			}
+
 			session, err := m.redis.HGetAll(c.Request().Context(), sessionKey).Result()
 			if err != nil || len(session) == 0 {
 				log.Errorf("[CheckToken-3] Invalid token: %v", err)

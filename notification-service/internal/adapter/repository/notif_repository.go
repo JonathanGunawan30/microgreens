@@ -21,7 +21,7 @@ func NewNotificationRepository(db *gorm.DB) port.NotificationRepository {
 	return &notifRepository{db: db}
 }
 
-func (n *notifRepository) GetAll(ctx context.Context, query entity.NotifQueryString) ([]entity.NotificationEntity, int64, error) {
+func (n *notifRepository) GetAll(ctx context.Context, query entity.NotifQueryString, userID int64) ([]entity.NotificationEntity, int64, error) {
 	var (
 		modelNotif []model.Notification
 		count      int64
@@ -37,9 +37,7 @@ func (n *notifRepository) GetAll(ctx context.Context, query entity.NotifQueryStr
 		)
 	}
 
-	if query.UserID != 0 {
-		db = db.Where("receiver_id = ?", query.UserID)
-	}
+	db = db.Where("receiver_id = ? AND notification_type = ?", userID, "PUSH")
 
 	if query.IsRead {
 		db = db.Where("read_at IS NOT NULL")
@@ -86,18 +84,20 @@ func (n *notifRepository) GetAll(ctx context.Context, query entity.NotifQueryStr
 		result = append(result, entity.NotificationEntity{
 			ID:      notif.ID,
 			Subject: notif.Subject,
+			Message: notif.Message,
 			Status:  notif.Status,
 			SendAt:  notif.SendAt,
+			ReadAt:  notif.ReadAt,
 		})
 	}
 
 	return result, count, nil
 }
 
-func (n *notifRepository) GetByID(ctx context.Context, notifID int64) (*entity.NotificationEntity, error) {
+func (n *notifRepository) GetByID(ctx context.Context, notifID, userID int64) (*entity.NotificationEntity, error) {
 	modelNotif := model.Notification{}
 	if err := n.db.WithContext(ctx).Select("id", "subject", "status", "send_at", "read_at", "message", "notification_type").
-		Where("id = ?", notifID).First(&modelNotif).Error; err != nil {
+		Where("id = ? AND receiver_id = ?", notifID, userID).First(&modelNotif).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, msg.ErrNotifNotFound
 		}
@@ -140,4 +140,33 @@ func (n *notifRepository) UpdateStatus(ctx context.Context, id int64, status str
 		Model(&model.Notification{}).
 		Where("id = ?", id).
 		Update("status", status).Error
+}
+
+func (n *notifRepository) ReadNotificationByID(ctx context.Context, id, userID int64) error {
+	var notif model.Notification
+	err := n.db.WithContext(ctx).
+		Where("id = ? AND receiver_id = ? AND notification_type = ?", id, userID, "PUSH").
+		First(&notif).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return msg.ErrNotifNotFound
+		}
+		return err
+	}
+
+	if notif.ReadAt != nil {
+		return nil
+	}
+
+	return n.db.WithContext(ctx).
+		Model(&notif).
+		Update("read_at", time.Now()).Error
+}
+
+func (n *notifRepository) ReadAllNotifications(ctx context.Context, userID int64) error {
+	return n.db.WithContext(ctx).
+		Model(&model.Notification{}).
+		Where("receiver_id = ? AND notification_type = ? AND read_at IS NULL", userID, "PUSH").
+		Update("read_at", time.Now()).Error
 }

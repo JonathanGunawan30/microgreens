@@ -4,23 +4,28 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"notification-service/config"
 	"notification-service/internal/core/domain/entity"
 	"notification-service/internal/core/port"
 	"notification-service/utils/constant"
 	"notification-service/utils/conv"
 	"notification-service/utils/websocket"
 	"strings"
+
+	"github.com/labstack/gommon/log"
 )
 
 type NotificationService struct {
 	emailSender port.EmailSender
 	repo        port.NotificationRepository
+	cfg         *config.Config
 }
 
-func NewNotificationService(emailSender port.EmailSender, repo port.NotificationRepository) *NotificationService {
+func NewNotificationService(emailSender port.EmailSender, repo port.NotificationRepository, cfg *config.Config) *NotificationService {
 	return &NotificationService{
 		emailSender: emailSender,
 		repo:        repo,
+		cfg:         cfg,
 	}
 }
 
@@ -81,7 +86,8 @@ func (n *NotificationService) sendPush(notif entity.NotificationEntity) error {
 
 	conn := websocket.GetWebSocketConn(*notif.ReceiverID)
 	if conn == nil {
-		return fmt.Errorf("websocket connection not found")
+		log.Infof("User %d is offline, skipping real-time push", *notif.ReceiverID)
+		return nil
 	}
 
 	msg := map[string]any{
@@ -94,17 +100,35 @@ func (n *NotificationService) sendPush(notif entity.NotificationEntity) error {
 	return conn.WriteJSON(msg)
 }
 
-func (n *NotificationService) GetAll(ctx context.Context, query entity.NotifQueryString) ([]entity.NotificationEntity, int64, int64, error) {
-	data, totalRows, err := n.repo.GetAll(ctx, query)
+func (n *NotificationService) GetAll(ctx context.Context, query entity.NotifQueryString, userID int64) ([]entity.NotificationEntity, int64, int64, error) {
+	data, totalRows, err := n.repo.GetAll(ctx, query, userID)
 	if err != nil {
 		return nil, 0, 0, err
 	}
 
-	totalPages := int64(math.Ceil(float64(totalRows) / float64(query.Limit)))
+	var totalPages int64
+	if query.Limit > 0 {
+		totalPages = int64(math.Ceil(float64(totalRows) / float64(query.Limit)))
+	}
 
 	return data, totalRows, totalPages, nil
 }
 
-func (n *NotificationService) GetByID(ctx context.Context, notifID int64) (*entity.NotificationEntity, error) {
-	return n.repo.GetByID(ctx, notifID)
+func (n *NotificationService) GetByID(ctx context.Context, notifID, userID int64) (*entity.NotificationEntity, error) {
+	return n.repo.GetByID(ctx, notifID, userID)
+}
+
+func (n *NotificationService) GetAdmin() entity.AdminEntity {
+	return entity.AdminEntity{
+		ID:    n.cfg.App.AdminID,
+		Email: n.cfg.App.AdminEmail,
+	}
+}
+
+func (n *NotificationService) ReadNotificationByID(ctx context.Context, id, userID int64) error {
+	return n.repo.ReadNotificationByID(ctx, id, userID)
+}
+
+func (n *NotificationService) ReadAllNotifications(ctx context.Context, userID int64) error {
+	return n.repo.ReadAllNotifications(ctx, userID)
 }

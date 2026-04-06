@@ -9,6 +9,9 @@ type App struct {
 	ServerTimeOut int `json:"server_time_out"`
 
 	JwtSecretKey string `json:"jwt_secret_key"`
+
+	AdminEmail string `json:"admin_email"`
+	AdminID    int64  `json:"admin_id"`
 }
 
 type RedisConfig struct {
@@ -44,12 +47,17 @@ type Email struct {
 	TLS      bool   `json:"tls"`
 }
 
+type ExchangeName struct {
+	OrderEvent string `json:"order_event"`
+}
+
 type Config struct {
-	App      App            `json:"app"`
-	Psql     PsqlDB         `json:"psql"`
-	RabbitMQ RabbitmqConfig `json:"rabbitmq"`
-	Redis    RedisConfig    `json:"redis"`
-	Email    Email          `json:"email"`
+	App          App            `json:"app"`
+	Psql         PsqlDB         `json:"psql"`
+	RabbitMQ     RabbitmqConfig `json:"rabbitmq"`
+	Redis        RedisConfig    `json:"redis"`
+	Email        Email          `json:"email"`
+	ExchangeName ExchangeName   `json:"exchange_name"`
 }
 
 func NewConfig() *Config {
@@ -58,6 +66,9 @@ func NewConfig() *Config {
 			AppPort:       viper.GetString("APP_PORT"),
 			AppEnv:        viper.GetString("APP_ENV"),
 			ServerTimeOut: viper.GetInt("SERVER_TIMEOUT"),
+			JwtSecretKey:  viper.GetString("JWT_SECRET_KEY"),
+			AdminEmail:    viper.GetString("ADMIN_EMAIL"),
+			AdminID:       viper.GetInt64("ADMIN_ID"),
 		},
 		Redis: RedisConfig{
 			Host:     viper.GetString("REDIS_HOST"),
@@ -87,6 +98,9 @@ func NewConfig() *Config {
 			Password: viper.GetString("EMAIL_PASSWORD"),
 			From:     viper.GetString("EMAIL_FROM"),
 			TLS:      viper.GetBool("EMAIL_TLS"),
+		},
+		ExchangeName: ExchangeName{
+			OrderEvent: viper.GetString("ORDER_EVENT"),
 		},
 	}
 }
