@@ -6,6 +6,8 @@ const (
 	NOTIF_EMAIL_UPDATE_STATUS_ORDER = "email-update-status-order"
 	NOTIF_EMAIL_CREATE_CUSTOMER     = "create_customer"
 	NOTIF_EMAIL_UPDATE_CUSTOMER     = "update_costomer"
+	ORDER_PUSH_QUEUE                = "order.created.push.notification"
+	ORDER_EMAIL_QUEUE               = "order.created.email.notification"
 )
 
 const (
