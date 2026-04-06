@@ -1,0 +1,365 @@
+definitions:
+  request.MidtransWebhookPayload:
+    properties:
+      gross_amount:
+        type: string
+      order_id:
+        maxLength: 64
+        type: string
+      signature_key:
+        type: string
+      status_code:
+        type: string
+      transaction_status:
+        maxLength: 50
+        type: string
+    type: object
+  request.PaymentRequest:
+    properties:
+      order_id:
+        type: integer
+      payment_method:
+        maxLength: 50
+        type: string
+      remarks:
+        maxLength: 500
+        type: string
+      user_id:
+        type: integer
+    required:
+    - order_id
+    - payment_method
+    - user_id
+    type: object
+  response.DefaultResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  response.DefaultResponseWithPagination:
+    properties:
+      data: {}
+      message:
+        type: string
+      pagination:
+        $ref: '#/definitions/response.PaginationMeta'
+    type: object
+  response.PaginationMeta:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total_count:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+  response.PaymentDetailResponse:
+    properties:
+      customer_address:
+        type: string
+      customer_name:
+        type: string
+      gross_amount:
+        type: number
+      id:
+        type: integer
+      order_code:
+        type: string
+      order_date:
+        type: string
+      order_remarks:
+        type: string
+      order_time:
+        type: string
+      payment_at:
+        type: string
+      payment_method:
+        type: string
+      payment_status:
+        type: string
+      shipping_type:
+        type: string
+    type: object
+  response.PaymentListResponse:
+    properties:
+      gross_amount:
+        type: number
+      id:
+        type: integer
+      order_code:
+        type: string
+      payment_method:
+        type: string
+      payment_status:
+        type: string
+      shipping_type:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /admin/payments:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of payments. Customer role will only see their
+        own payments, admin sees all.
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponseWithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.PaymentListResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all payments
+      tags:
+      - payments
+  /admin/payments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get payment detail by ID. Customer role can only access their own
+        payment.
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.PaymentDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get payment detail
+      tags:
+      - payments
+  /auth/payments:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of payments. Customer role will only see their
+        own payments, admin sees all.
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponseWithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.PaymentListResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all payments
+      tags:
+      - payments
+    post:
+      consumes:
+      - application/json
+      description: Process a new payment for an order
+      parameters:
+      - description: Payment Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.PaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Create payment
+      tags:
+      - payments
+  /auth/payments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get payment detail by ID. Customer role can only access their own
+        payment.
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.PaymentDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get payment detail
+      tags:
+      - payments
+  /payments/webhook:
+    post:
+      consumes:
+      - application/json
+      description: Receive and process payment status callback from Midtrans
+      parameters:
+      - description: Midtrans Webhook Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.MidtransWebhookPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "403":
+          description: Invalid Signature
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Midtrans webhook
+      tags:
+      - payments
+swagger: "2.0"
