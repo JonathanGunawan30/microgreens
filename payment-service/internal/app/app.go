@@ -35,11 +35,12 @@ func RunServer() {
 	defer rabbitMQClient.Close()
 
 	paymentRepository := repository.NewPaymentRepository(db.DB)
+	usersSnapshotRepository := repository.NewUserSnapshotRepository(db.DB)
+	ordersSnapshotRepository := repository.NewOrdersSnapshotRepository(db.DB)
 
-	httpClient := adapter.NewHttpClient(cfg)
 	midtransClient := adapter.NewMidtransClient(cfg)
 
-	paymentService := service.NewPaymentService(paymentRepository, httpClient, midtransClient, rabbitMQClient, cfg)
+	paymentService := service.NewPaymentService(paymentRepository, ordersSnapshotRepository, usersSnapshotRepository, midtransClient, rabbitMQClient, cfg)
 
 	e := echo.New()
 	e.Use(middleware.CORS())
