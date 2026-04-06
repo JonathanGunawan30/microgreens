@@ -9,8 +9,8 @@ import (
 	"order-service/internal/core/domain/entity"
 	"strconv"
 
-	"github.com/elastic/go-elasticsearch/v9"
-	"github.com/elastic/go-elasticsearch/v9/typedapi/types/enums/refresh"
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
 	"github.com/labstack/gommon/log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
