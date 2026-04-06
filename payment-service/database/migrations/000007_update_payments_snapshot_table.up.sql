@@ -1,0 +1,3 @@
+ALTER TABLE payments DROP COLUMN IF EXISTS order_at;
+ALTER TABLE payments ADD COLUMN order_date VARCHAR(20) DEFAULT '';
+ALTER TABLE payments ADD COLUMN order_time VARCHAR(20) DEFAULT '';
