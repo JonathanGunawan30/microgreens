@@ -36,17 +36,19 @@ var workerCmd = &cobra.Command{
 
 		productRepository := repository.NewProductRepository(dbConn.DB, esClient)
 
-		queueEsName := cfg.RabbitMQ.QueueEsIndexing
+		productEvent := cfg.ExchangeName.ProductEvent
+
+		queueEsName := cfg.QueueName.ProductES
 		queueStockName := cfg.RabbitMQ.QueueStockUpdate
 
-		if queueEsName == "" || queueStockName == "" {
-			log.Fatalf("Queue name are empty in .env!")
+		if queueEsName == "" || queueStockName == "" || productEvent == "" {
+			log.Fatalf("Queue/Exchange name are empty in .env!")
 		}
 
 		log.Infof("Depedencies ready. Spawning consumers...")
 
-		go message.StartIndexingCustomer(rabbitMQClient, esClient, queueEsName)
-		go message.StartStockUpdateConsumer(rabbitMQClient, productRepository, queueStockName)
+		go message.StartIndexingConsumer(rabbitMQClient, esClient, queueEsName, productEvent)
+		go message.StartStockUpdateConsumer(rabbitMQClient, productRepository, queueStockName, esClient)
 
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)

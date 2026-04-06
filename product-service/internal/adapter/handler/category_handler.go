@@ -49,11 +49,27 @@ func NewCategoryHandler(e *echo.Echo, categoryService service.CategoryServiceInt
 
 	publicGroup := e.Group("/categories")
 	publicGroup.GET("", categoryHandler.GetAllShopCategories)
-	publicGroup.GET("/featured", categoryHandler.GetAllShopCategories)
+	publicGroup.GET("/featured", categoryHandler.GetAllHomeCategories)
 
 	return categoryHandler
 }
 
+// GetAllAdminCategories godoc
+// @Summary Get all categories (admin)
+// @Description Get paginated list of categories for admin
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param search query string false "Search by name"
+// @Param orderBy query string false "Order by field (default: created_at)"
+// @Param orderType query string false "Order type ASC or DESC (default: desc)"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 10)"
+// @Success 200 {object} response.DefaultResponseWithPagination{data=[]response.CategoryListAdminResponse} "Success"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/categories [get]
 func (h *categoryHandler) GetAllAdminCategories(c echo.Context) error {
 	var (
 		respCategories []response.CategoryListAdminResponse
@@ -131,6 +147,20 @@ func (h *categoryHandler) GetAllAdminCategories(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetByIDAdminCategory godoc
+// @Summary Get category by ID (admin)
+// @Description Get category detail by ID for admin
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Category ID"
+// @Success 200 {object} response.DefaultResponse{data=response.CategoryResponse} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/categories/{id} [get]
 func (h *categoryHandler) GetByIDAdminCategory(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -174,6 +204,20 @@ func (h *categoryHandler) GetByIDAdminCategory(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetBySlugAdminCategory godoc
+// @Summary Get category by slug (admin)
+// @Description Get category detail by slug for admin
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param slug path string true "Category Slug"
+// @Success 200 {object} response.DefaultResponse{data=response.CategoryResponse} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/categories/slug/{slug} [get]
 func (h *categoryHandler) GetBySlugAdminCategory(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -216,6 +260,21 @@ func (h *categoryHandler) GetBySlugAdminCategory(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// CreateAdminCategory godoc
+// @Summary Create category (admin)
+// @Description Create a new category
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body request.CreateCategoryRequest true "Create Category Request"
+// @Success 201 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 409 {object} response.DefaultResponse "Conflict"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/categories [post]
 func (h *categoryHandler) CreateAdminCategory(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -263,6 +322,23 @@ func (h *categoryHandler) CreateAdminCategory(c echo.Context) error {
 	return c.JSON(http.StatusCreated, resp)
 }
 
+// UpdateAdminCategory godoc
+// @Summary Update category (admin)
+// @Description Update category by ID
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Category ID"
+// @Param request body request.UpdateCategoryRequest true "Update Category Request"
+// @Success 200 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 409 {object} response.DefaultResponse "Conflict"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/categories/{id} [put]
 func (h *categoryHandler) UpdateAdminCategory(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -328,6 +404,21 @@ func (h *categoryHandler) UpdateAdminCategory(c echo.Context) error {
 
 }
 
+// DeleteAdminCategory godoc
+// @Summary Delete category (admin)
+// @Description Delete category by ID
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Category ID"
+// @Success 200 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 409 {object} response.DefaultResponse "Conflict - Category has products"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/categories/{id} [delete]
 func (h *categoryHandler) DeleteAdminCategory(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -368,6 +459,15 @@ func (h *categoryHandler) DeleteAdminCategory(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetAllHomeCategories godoc
+// @Summary Get featured categories (public)
+// @Description Get all published parent categories for home page
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.DefaultResponse{data=[]response.CategoryListHomeResponse} "Success"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /categories/featured [get]
 func (h *categoryHandler) GetAllHomeCategories(c echo.Context) error {
 	var (
 		respCategories []response.CategoryListHomeResponse
@@ -401,6 +501,15 @@ func (h *categoryHandler) GetAllHomeCategories(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetAllShopCategories godoc
+// @Summary Get all categories with children (public)
+// @Description Get all published categories with nested children for shop page
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.DefaultResponse{data=[]response.CategoryListShopResponse} "Success"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /categories [get]
 func (h *categoryHandler) GetAllShopCategories(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -421,7 +530,7 @@ func (h *categoryHandler) GetAllShopCategories(c echo.Context) error {
 		categoryMap[cat.ID] = &response.CategoryListShopResponse{
 			Name:  cat.Name,
 			Slug:  cat.Slug,
-			Child: make([]*response.CategoryListShopResponse, 0),
+			Child: make([]*response.CategoryListShopChildResponse, 0),
 		}
 	}
 
@@ -429,12 +538,14 @@ func (h *categoryHandler) GetAllShopCategories(c echo.Context) error {
 
 	for _, cat := range categories {
 		currentResp := categoryMap[cat.ID]
-
 		if cat.ParentID == nil {
 			rootCategories = append(rootCategories, currentResp)
 		} else {
 			if parentResp, exists := categoryMap[*cat.ParentID]; exists {
-				parentResp.Child = append(parentResp.Child, currentResp)
+				parentResp.Child = append(parentResp.Child, &response.CategoryListShopChildResponse{
+					Name: currentResp.Name,
+					Slug: currentResp.Slug,
+				})
 			} else {
 				rootCategories = append(rootCategories, currentResp)
 			}

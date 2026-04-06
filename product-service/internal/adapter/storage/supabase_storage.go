@@ -10,6 +10,7 @@ import (
 
 type SupabaseInterface interface {
 	UploadFile(path string, file io.Reader, contentType string) (string, error)
+	RemoveFile(path string) error
 }
 
 type supabase struct {
@@ -32,4 +33,17 @@ func (s *supabase) UploadFile(path string, file io.Reader, contentType string) (
 	url := client.GetPublicUrl(s.cfg.Supabase.Bucket, path)
 
 	return url.SignedURL, nil
+}
+
+func (s *supabase) RemoveFile(path string) error {
+	client := storage_go.NewClient(s.cfg.Supabase.URL, s.cfg.Supabase.Key, nil)
+
+	_, err := client.RemoveFile(s.cfg.Supabase.Bucket, []string{path})
+
+	if err != nil {
+		log.Errorf("[RemoveFile] Failed to remove file: %v", err)
+		return err
+	}
+
+	return nil
 }

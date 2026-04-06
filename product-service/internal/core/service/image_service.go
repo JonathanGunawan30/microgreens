@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"product-service/internal/adapter/storage"
 	"product-service/utils/message"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +23,7 @@ var allowedMime = map[string]bool{
 
 type ImageServiceInterface interface {
 	UploadProfileImage(file *multipart.FileHeader) (string, error)
+	DeleteProfileImage(path, bucket string) error
 }
 
 type imageService struct {
@@ -66,4 +68,21 @@ func (i *imageService) UploadProfileImage(file *multipart.FileHeader) (string, e
 	path := "uploads/" + filename
 
 	return i.storage.UploadFile(path, buf, contentType)
+}
+
+func (i *imageService) DeleteProfileImage(input, bucket string) error {
+	path := extractPath(input, bucket)
+
+	return i.storage.RemoveFile(path)
+}
+
+func extractPath(input string, bucket string) string {
+	pattern := "/object/public/" + bucket + "/"
+
+	idx := strings.Index(input, pattern)
+	if idx == -1 {
+		return input
+	}
+
+	return input[idx+len(pattern):]
 }

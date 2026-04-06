@@ -11,6 +11,7 @@ import (
 	"product-service/internal/core/service"
 	"product-service/utils/conv"
 	"product-service/utils/message"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -54,6 +55,26 @@ func NewProductHandler(e *echo.Echo, productService service.ProductServiceInterf
 	return productHandler
 }
 
+// GetAllAdminProducts godoc
+// @Summary Get all products (admin)
+// @Description Get paginated list of products with filters for admin
+// @Tags products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param search query string false "Search by name"
+// @Param orderBy query string false "Order by (price_asc, price_desc, newest)"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 10)"
+// @Param startPrice query int false "Filter by minimum price"
+// @Param endPrice query int false "Filter by maximum price"
+// @Param status query string false "Filter by status"
+// @Param category query string false "Filter by category slug"
+// @Param is_parent query string false "Filter by parent product"
+// @Success 200 {object} response.DefaultResponseWithPagination{data=[]response.ProductListResponse} "Success"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/products [get]
 func (p *productHandler) GetAllAdminProducts(c echo.Context) error {
 	var (
 		respProducts []response.ProductListResponse
@@ -122,6 +143,8 @@ func (p *productHandler) GetAllAdminProducts(c echo.Context) error {
 		status = c.QueryParam("status")
 	}
 
+	isParent := c.QueryParam("is_parent")
+
 	productQuery := entity.QueryStringProduct{
 		Search:       search,
 		Page:         page,
@@ -132,6 +155,7 @@ func (p *productHandler) GetAllAdminProducts(c echo.Context) error {
 		StartPrice:   startPrice,
 		EndPrice:     endPrice,
 		Status:       status,
+		IsParent:     isParent,
 	}
 
 	products, count, totalPages, err := p.productService.GetAllProducts(ctx, productQuery)
@@ -147,9 +171,8 @@ func (p *productHandler) GetAllAdminProducts(c echo.Context) error {
 		respProducts = append(respProducts, response.ProductListResponse{
 			ID:           product.ID,
 			Name:         product.Name,
-			ParentID:     product.ParentID,
 			Image:        product.Image,
-			CategoryName: product.CategorySlug,
+			CategoryName: product.CategoryName,
 			Status:       response.ProductStatus(product.Status),
 			SalePrice:    product.SalePrice,
 			CreatedAt:    product.CreatedAt,
@@ -168,6 +191,20 @@ func (p *productHandler) GetAllAdminProducts(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetProductByID godoc
+// @Summary Get product by ID (admin)
+// @Description Get product detail by ID for admin
+// @Tags products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Success 200 {object} response.DefaultResponse{data=response.ProductDetailResponse} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/products/{id} [get]
 func (p *productHandler) GetProductByID(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -208,6 +245,8 @@ func (p *productHandler) GetProductByID(c echo.Context) error {
 				RegulerPrice: child.RegulerPrice,
 				Weight:       child.Weight,
 				Stock:        child.Stock,
+				Image:        child.Image,
+				Unit:         child.Unit,
 			})
 		}
 	}
@@ -235,6 +274,21 @@ func (p *productHandler) GetProductByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// CreateProduct godoc
+// @Summary Create product (admin)
+// @Description Create a new product with its variants
+// @Tags products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body request.ProductRequest true "Create Product Request"
+// @Success 201 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Category Not Found"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/products [post]
 func (p *productHandler) CreateProduct(c echo.Context) error {
 	var (
 		req  = request.ProductRequest{}
@@ -256,39 +310,57 @@ func (p *productHandler) CreateProduct(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, resp)
 	}
 
+	totalStock := int64(0)
+
+	minSalePrice := req.VariantDetail[0].SalePrice
+	minRegPrice := req.VariantDetail[0].RegulerPrice
+
+	var productChildren = make([]entity.ProductEntity, 0, len(req.VariantDetail))
+	for _, v := range req.VariantDetail {
+		totalStock += v.Stock
+
+		if v.SalePrice < minSalePrice {
+			minSalePrice = v.SalePrice
+		}
+
+		if v.RegulerPrice < minRegPrice {
+			minRegPrice = v.RegulerPrice
+		}
+
+		productChildren = append(productChildren, entity.ProductEntity{
+			Image:        v.Image,
+			RegulerPrice: v.RegulerPrice,
+			SalePrice:    v.SalePrice,
+			Weight:       v.Weight,
+			Stock:        v.Stock,
+		})
+	}
+
 	reqEntity := entity.ProductEntity{
 		CategorySlug: req.CategorySlug,
 		ParentID:     nil,
 		Name:         req.Name,
-		Image:        req.VariantDetail[0].Image,
 		Description:  req.Description,
-		RegulerPrice: req.VariantDetail[0].RegulerPrice,
-		SalePrice:    req.VariantDetail[0].SalePrice,
 		Unit:         req.Unit,
-		Weight:       req.VariantDetail[0].Weight,
-		Stock:        req.VariantDetail[0].Stock,
 		Variant:      req.Variant,
 		Status:       entity.ProductStatus(req.Status),
-	}
-
-	var productChildren []entity.ProductEntity
-	if len(req.VariantDetail) > 1 {
-		productChildren = make([]entity.ProductEntity, 0, len(req.VariantDetail))
-		for i := 0; i < len(req.VariantDetail); i++ {
-			productChildren = append(productChildren, entity.ProductEntity{
-				Image:        req.VariantDetail[i].Image,
-				RegulerPrice: req.VariantDetail[i].RegulerPrice,
-				SalePrice:    req.VariantDetail[i].SalePrice,
-				Weight:       req.VariantDetail[i].Weight,
-				Stock:        req.VariantDetail[i].Stock,
-			})
-		}
-
-		reqEntity.Child = productChildren
+		Image:        req.VariantDetail[0].Image,
+		RegulerPrice: minRegPrice,
+		SalePrice:    minSalePrice,
+		Weight:       0,
+		Stock:        totalStock,
+		Child:        productChildren,
 	}
 
 	if err := p.productService.CreateProduct(ctx, reqEntity); err != nil {
 		log.Errorf("[ProductHandler - 3] CreateProduct: %v", err)
+
+		if errors.Is(err, message.ErrCategoryNotFound) {
+			resp.Message = "category not found"
+			resp.Data = nil
+			return c.JSON(http.StatusNotFound, resp)
+		}
+
 		resp.Message = "internal server error"
 		resp.Data = nil
 		return c.JSON(http.StatusInternalServerError, resp)
@@ -299,6 +371,22 @@ func (p *productHandler) CreateProduct(c echo.Context) error {
 	return c.JSON(http.StatusCreated, resp)
 }
 
+// UpdateProduct godoc
+// @Summary Update product (admin)
+// @Description Update an existing product by ID
+// @Tags products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Param request body request.ProductRequest true "Update Product Request"
+// @Success 200 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/products/{id} [put]
 func (p *productHandler) UpdateProduct(c echo.Context) error {
 	var (
 		req  = request.ProductRequest{}
@@ -329,36 +417,46 @@ func (p *productHandler) UpdateProduct(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, resp)
 	}
 
+	totalStock := int64(0)
+	minSalePrice := req.VariantDetail[0].SalePrice
+	minRegPrice := req.VariantDetail[0].RegulerPrice
+
+	var productChildren = make([]entity.ProductEntity, 0, len(req.VariantDetail))
+
+	for _, v := range req.VariantDetail {
+		totalStock += v.Stock
+
+		if v.SalePrice < minSalePrice {
+			minSalePrice = v.SalePrice
+		}
+		if v.RegulerPrice < minRegPrice {
+			minRegPrice = v.RegulerPrice
+		}
+
+		productChildren = append(productChildren, entity.ProductEntity{
+			Image:        v.Image,
+			RegulerPrice: v.RegulerPrice,
+			SalePrice:    v.SalePrice,
+			Weight:       v.Weight,
+			Stock:        v.Stock,
+		})
+	}
+
 	reqEntity := entity.ProductEntity{
 		ID:           productID,
 		CategorySlug: req.CategorySlug,
 		ParentID:     nil,
 		Name:         req.Name,
-		Image:        req.VariantDetail[0].Image,
 		Description:  req.Description,
-		RegulerPrice: req.VariantDetail[0].RegulerPrice,
-		SalePrice:    req.VariantDetail[0].SalePrice,
 		Unit:         req.Unit,
-		Weight:       req.VariantDetail[0].Weight,
-		Stock:        req.VariantDetail[0].Stock,
 		Variant:      req.Variant,
 		Status:       entity.ProductStatus(req.Status),
-	}
-
-	var productChildren []entity.ProductEntity
-	if len(req.VariantDetail) > 1 {
-		productChildren = make([]entity.ProductEntity, 0, len(req.VariantDetail))
-		for i := 0; i < len(req.VariantDetail); i++ {
-			productChildren = append(productChildren, entity.ProductEntity{
-				Image:        req.VariantDetail[i].Image,
-				RegulerPrice: req.VariantDetail[i].RegulerPrice,
-				SalePrice:    req.VariantDetail[i].SalePrice,
-				Weight:       req.VariantDetail[i].Weight,
-				Stock:        req.VariantDetail[i].Stock,
-			})
-		}
-
-		reqEntity.Child = productChildren
+		Image:        req.VariantDetail[0].Image,
+		RegulerPrice: minRegPrice,
+		SalePrice:    minSalePrice,
+		Stock:        totalStock,
+		Weight:       0,
+		Child:        productChildren,
 	}
 
 	err = p.productService.UpdateProduct(ctx, reqEntity)
@@ -380,6 +478,20 @@ func (p *productHandler) UpdateProduct(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// DeleteProductByID godoc
+// @Summary Delete product (admin)
+// @Description Delete a product by ID
+// @Tags products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Success 200 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/products/{id} [delete]
 func (p *productHandler) DeleteProductByID(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -414,17 +526,32 @@ func (p *productHandler) DeleteProductByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetHomeProducts godoc
+// @Summary Get featured products (public)
+// @Description Get a limited list of featured products for the home page
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param limit query int false "Items limit (default: 10)"
+// @Success 200 {object} response.DefaultResponse{data=[]response.ProductHomeListResponse} "Success"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /products/featured [get]
 func (p *productHandler) GetHomeProducts(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
 		ctx  = c.Request().Context()
 	)
 
-	limit := 5
+	limit := 10
+	if limitStr := c.QueryParam("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
 
 	products, err := p.productService.GetHomeProducts(ctx, limit)
 	if err != nil {
-		log.Errorf("[ProductHandler] GetAllHome: %v", err)
+		log.Errorf("[ProductHandler] GetHomeProducts: %v", err)
 		resp.Message = "internal server error"
 		resp.Data = nil
 		return c.JSON(http.StatusInternalServerError, resp)
@@ -436,7 +563,7 @@ func (p *productHandler) GetHomeProducts(c echo.Context) error {
 			ID:           product.ID,
 			Name:         product.Name,
 			Image:        product.Image,
-			CategoryName: product.CategorySlug,
+			CategoryName: product.CategoryName,
 			RegulerPrice: product.RegulerPrice,
 			SalePrice:    product.SalePrice,
 		})
@@ -448,6 +575,22 @@ func (p *productHandler) GetHomeProducts(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetShopProducts godoc
+// @Summary Get all shop products (public)
+// @Description Get paginated list of active products with filters for the shop page
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param search query string false "Search by name"
+// @Param category query string false "Filter by category slug"
+// @Param orderBy query string false "Order by (price_asc, price_desc, newest)"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 10)"
+// @Param startPrice query int false "Filter by minimum price"
+// @Param endPrice query int false "Filter by maximum price"
+// @Success 200 {object} response.DefaultResponseWithPagination{data=[]response.ProductListResponse} "Success"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /products [get]
 func (p *productHandler) GetShopProducts(c echo.Context) error {
 	var (
 		respProducts []response.ProductListResponse
@@ -497,11 +640,11 @@ func (p *productHandler) GetShopProducts(c echo.Context) error {
 
 	switch orderParam {
 	case "price_asc":
-		orderBy = "sale_price"
+		orderBy = "price"
 		orderType = "asc"
 
 	case "price_desc":
-		orderBy = "sale_price"
+		orderBy = "price"
 		orderType = "desc"
 
 	case "newest":
@@ -534,12 +677,11 @@ func (p *productHandler) GetShopProducts(c echo.Context) error {
 		respProducts = append(respProducts, response.ProductListResponse{
 			ID:           product.ID,
 			Name:         product.Name,
-			ParentID:     product.ParentID,
 			Image:        product.Image,
-			CategoryName: product.CategorySlug,
+			CategoryName: product.CategoryName,
 			Status:       response.ProductStatus(product.Status),
 			SalePrice:    product.SalePrice,
-			CreatedAt:    product.CreatedAt,
+			RegulerPrice: product.RegulerPrice,
 		})
 	}
 
@@ -555,6 +697,18 @@ func (p *productHandler) GetShopProducts(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// GetHomeProductDetail godoc
+// @Summary Get product detail (public)
+// @Description Get detailed information of a specific product by ID for the home/shop page
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param id path int true "Product ID"
+// @Success 200 {object} response.DefaultResponse{data=response.ProductHomeDetailResponse} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /products/{id} [get]
 func (p *productHandler) GetHomeProductDetail(c echo.Context) error {
 	var (
 		resp = response.DefaultResponse{}
@@ -603,7 +757,8 @@ func (p *productHandler) GetHomeProductDetail(c echo.Context) error {
 	productResponse := response.ProductHomeDetailResponse{
 		ID:           product.ID,
 		Name:         product.Name,
-		CategoryName: product.CategorySlug,
+		CategoryName: product.CategoryName,
+		CategorySlug: product.CategorySlug,
 		Description:  product.Description,
 		Unit:         product.Unit,
 		Image:        product.Image,

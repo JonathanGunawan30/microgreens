@@ -32,6 +32,9 @@ func cartKey(userID int64) string {
 }
 
 func (c *CartRedisRepository) AddToCart(ctx context.Context, userID int64, item entity.CartItem) error {
+	if c.Client == nil {
+		return nil
+	}
 	key := cartKey(userID)
 
 	err := c.Client.HIncrBy(
@@ -52,6 +55,9 @@ func (c *CartRedisRepository) AddToCart(ctx context.Context, userID int64, item 
 }
 
 func (c *CartRedisRepository) GetCart(ctx context.Context, userID int64) ([]entity.CartItem, error) {
+	if c.Client == nil {
+		return []entity.CartItem{}, nil
+	}
 	key := cartKey(userID)
 
 	result, err := c.Client.HGetAll(ctx, key).Result()
@@ -87,6 +93,9 @@ func (c *CartRedisRepository) GetCart(ctx context.Context, userID int64) ([]enti
 }
 
 func (c *CartRedisRepository) RemoveFromCart(ctx context.Context, userID, productID int64) error {
+	if c.Client == nil {
+		return nil
+	}
 	key := cartKey(userID)
 
 	err := c.Client.HDel(
@@ -104,6 +113,9 @@ func (c *CartRedisRepository) RemoveFromCart(ctx context.Context, userID, produc
 }
 
 func (c *CartRedisRepository) ClearCart(ctx context.Context, userID int64) error {
+	if c.Client == nil {
+		return nil
+	}
 	key := cartKey(userID)
 
 	err := c.Client.Del(ctx, key).Err()
@@ -116,6 +128,9 @@ func (c *CartRedisRepository) ClearCart(ctx context.Context, userID int64) error
 }
 
 func (c *CartRedisRepository) DecreaseItem(ctx context.Context, userID, productID, quantity int64) error {
+	if c.Client == nil {
+		return nil
+	}
 	key := cartKey(userID)
 	field := strconv.FormatInt(productID, 10)
 

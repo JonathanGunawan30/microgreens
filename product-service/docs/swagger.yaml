@@ -1,0 +1,1349 @@
+definitions:
+  request.CartRequest:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  request.CreateCategoryRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      icon:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      parent_id:
+        type: integer
+      status:
+        type: boolean
+    required:
+    - icon
+    - name
+    - status
+    type: object
+  request.ProductDetailRequest:
+    properties:
+      image:
+        maxLength: 255
+        type: string
+      reguler_price:
+        type: integer
+      sale_price:
+        type: integer
+      stock:
+        type: integer
+      weight:
+        type: integer
+    required:
+    - image
+    - reguler_price
+    - sale_price
+    - stock
+    - weight
+    type: object
+  request.ProductRequest:
+    properties:
+      category_slug:
+        maxLength: 100
+        type: string
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      status:
+        type: string
+      unit:
+        maxLength: 100
+        type: string
+      variant:
+        type: integer
+      variant_detail:
+        items:
+          $ref: '#/definitions/request.ProductDetailRequest'
+        type: array
+    required:
+    - category_slug
+    - description
+    - name
+    - status
+    - unit
+    - variant
+    - variant_detail
+    type: object
+  request.RemoveImageRequest:
+    properties:
+      image_url:
+        type: string
+    type: object
+  request.UpdateCategoryRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      icon:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      parent_id:
+        type: integer
+      status:
+        type: boolean
+    required:
+    - icon
+    - name
+    - status
+    type: object
+  response.CategoryListAdminResponse:
+    properties:
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      slug:
+        type: string
+      status:
+        type: boolean
+      total_product:
+        type: integer
+    type: object
+  response.CategoryListHomeResponse:
+    properties:
+      icon:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  response.CategoryListShopChildResponse:
+    properties:
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  response.CategoryListShopResponse:
+    properties:
+      child:
+        items:
+          $ref: '#/definitions/response.CategoryListShopChildResponse'
+        type: array
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  response.CategoryResponse:
+    properties:
+      description:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      slug:
+        type: string
+      status:
+        type: boolean
+    type: object
+  response.DefaultResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  response.DefaultResponseWithPagination:
+    properties:
+      data: {}
+      message:
+        type: string
+      pagination:
+        $ref: '#/definitions/response.PaginationMeta'
+    type: object
+  response.PaginationMeta:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total_count:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+  response.ProductChildHomeResponse:
+    properties:
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      reguler_price:
+        type: integer
+      sale_price:
+        type: integer
+      stock:
+        type: integer
+      weight:
+        type: integer
+    type: object
+  response.ProductChildResponse:
+    properties:
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      reguler_price:
+        type: integer
+      sale_price:
+        type: integer
+      stock:
+        type: integer
+      unit:
+        type: string
+      weight:
+        type: integer
+    type: object
+  response.ProductDetailResponse:
+    properties:
+      category_name:
+        type: string
+      category_slug:
+        type: string
+      child:
+        items:
+          $ref: '#/definitions/response.ProductChildResponse'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: integer
+      reguler_price:
+        type: integer
+      sale_price:
+        type: integer
+      status:
+        type: string
+      stock:
+        type: integer
+      unit:
+        type: string
+      weight:
+        type: integer
+    type: object
+  response.ProductHomeDetailResponse:
+    properties:
+      category_name:
+        type: string
+      category_slug:
+        type: string
+      child:
+        items:
+          $ref: '#/definitions/response.ProductChildHomeResponse'
+        type: array
+      description:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      reguler_price:
+        type: integer
+      sale_price:
+        type: integer
+      stock:
+        type: integer
+      unit:
+        type: string
+      weight:
+        type: integer
+    type: object
+  response.ProductHomeListResponse:
+    properties:
+      category_name:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      reguler_price:
+        type: integer
+      sale_price:
+        type: integer
+    type: object
+  response.ProductListResponse:
+    properties:
+      category_name:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      reguler_price:
+        type: integer
+      sale_price:
+        type: integer
+      status:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /admin/categories:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of categories for admin
+      parameters:
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      - description: 'Order by field (default: created_at)'
+        in: query
+        name: orderBy
+        type: string
+      - description: 'Order type ASC or DESC (default: desc)'
+        in: query
+        name: orderType
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponseWithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.CategoryListAdminResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all categories (admin)
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: Create a new category
+      parameters:
+      - description: Create Category Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Create category (admin)
+      tags:
+      - categories
+  /admin/categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict - Category has products
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete category (admin)
+      tags:
+      - categories
+    get:
+      consumes:
+      - application/json
+      description: Get category detail by ID for admin
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get category by ID (admin)
+      tags:
+      - categories
+    put:
+      consumes:
+      - application/json
+      description: Update category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Category Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Update category (admin)
+      tags:
+      - categories
+  /admin/categories/slug/{slug}:
+    get:
+      consumes:
+      - application/json
+      description: Get category detail by slug for admin
+      parameters:
+      - description: Category Slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get category by slug (admin)
+      tags:
+      - categories
+  /admin/image:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an image from storage by its URL
+      parameters:
+      - description: Remove Image Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.RemoveImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request - URL required
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove image (admin/auth)
+      tags:
+      - images
+  /admin/image-upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload an image file to storage
+      parameters:
+      - description: Image file to upload
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Bad Request - Invalid file or size
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload image (admin/auth)
+      tags:
+      - images
+  /admin/products:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of products with filters for admin
+      parameters:
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      - description: Order by (price_asc, price_desc, newest)
+        in: query
+        name: orderBy
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by minimum price
+        in: query
+        name: startPrice
+        type: integer
+      - description: Filter by maximum price
+        in: query
+        name: endPrice
+        type: integer
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by category slug
+        in: query
+        name: category
+        type: string
+      - description: Filter by parent product
+        in: query
+        name: is_parent
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponseWithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.ProductListResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all products (admin)
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Create a new product with its variants
+      parameters:
+      - description: Create Product Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Category Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Create product (admin)
+      tags:
+      - products
+  /admin/products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a product by ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete product (admin)
+      tags:
+      - products
+    get:
+      consumes:
+      - application/json
+      description: Get product detail by ID for admin
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProductDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get product by ID (admin)
+      tags:
+      - products
+    put:
+      consumes:
+      - application/json
+      description: Update an existing product by ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Product Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Update product (admin)
+      tags:
+      - products
+  /auth/cart:
+    delete:
+      consumes:
+      - application/json
+      description: Remove all items from the authenticated user's cart
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Clear cart
+      tags:
+      - cart
+    get:
+      consumes:
+      - application/json
+      description: Get all cart items for authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Get cart items
+      tags:
+      - cart
+    post:
+      consumes:
+      - application/json
+      description: Add a product to the authenticated user's cart
+      parameters:
+      - description: Cart Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CartRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Product Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Add item to cart
+      tags:
+      - cart
+  /auth/cart/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a specific product from the authenticated user's cart
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove item from cart
+      tags:
+      - cart
+  /auth/cart/decrease:
+    patch:
+      consumes:
+      - application/json
+      description: Decrease the quantity of a product in the authenticated user's
+        cart
+      parameters:
+      - description: Cart Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "422":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Decrease cart item quantity
+      tags:
+      - cart
+  /auth/image:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an image from storage by its URL
+      parameters:
+      - description: Remove Image Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.RemoveImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "400":
+          description: Bad Request - URL required
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove image (admin/auth)
+      tags:
+      - images
+  /auth/image-upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload an image file to storage
+      parameters:
+      - description: Image file to upload
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Bad Request - Invalid file or size
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload image (admin/auth)
+      tags:
+      - images
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get all published categories with nested children for shop page
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.CategoryListShopResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Get all categories with children (public)
+      tags:
+      - categories
+  /categories/featured:
+    get:
+      consumes:
+      - application/json
+      description: Get all published parent categories for home page
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.CategoryListHomeResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Get featured categories (public)
+      tags:
+      - categories
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of active products with filters for the shop
+        page
+      parameters:
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      - description: Filter by category slug
+        in: query
+        name: category
+        type: string
+      - description: Order by (price_asc, price_desc, newest)
+        in: query
+        name: orderBy
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by minimum price
+        in: query
+        name: startPrice
+        type: integer
+      - description: Filter by maximum price
+        in: query
+        name: endPrice
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponseWithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.ProductListResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Get all shop products (public)
+      tags:
+      - products
+  /products/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information of a specific product by ID for the home/shop
+        page
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProductHomeDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Get product detail (public)
+      tags:
+      - products
+  /products/featured:
+    get:
+      consumes:
+      - application/json
+      description: Get a limited list of featured products for the home page
+      parameters:
+      - description: 'Items limit (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.ProductHomeListResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Get featured products (public)
+      tags:
+      - products
+swagger: "2.0"

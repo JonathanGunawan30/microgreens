@@ -3,11 +3,11 @@ package entity
 import "time"
 
 type ProductStatus string
+type ActionType string
 
 const (
-	ProductStatusDraft    ProductStatus = "draft"
-	ProductStatusActive   ProductStatus = "active"
-	ProductStatusInactive ProductStatus = "inactive"
+	ActionInsert ActionType = "INSERT"
+	ActionDelete ActionType = "DELETE"
 )
 
 type ProductEntity struct {
@@ -38,8 +38,14 @@ type QueryStringProduct struct {
 	StartPrice   int64
 	EndPrice     int64
 	Status       string
+	IsParent     string
 }
 type StockUpdateMessage struct {
 	ProductID int64 `json:"product_id"`
 	Quantity  int64 `json:"quantity"`
+}
+type ProductEvent struct {
+	Action ActionType     `json:"action"`
+	Data   *ProductEntity `json:"data,omitempty"`
+	ID     int64          `json:"id,omitempty"`
 }

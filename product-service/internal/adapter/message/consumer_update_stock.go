@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"product-service/internal/adapter/repository"
 	"product-service/internal/core/domain/entity"
+	"strconv"
 
+	"github.com/elastic/go-elasticsearch/v9"
 	"github.com/labstack/gommon/log"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func StartStockUpdateConsumer(conn *amqp.Connection, repo repository.ProductRepositoryInterface, queueName string) {
+func StartStockUpdateConsumer(conn *amqp.Connection, repo repository.ProductRepositoryInterface, queueName string, es *elasticsearch.TypedClient) {
+	if conn == nil {
+		return
+	}
 	ch, err := conn.Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
@@ -41,7 +46,7 @@ func StartStockUpdateConsumer(conn *amqp.Connection, repo repository.ProductRepo
 		for d := range msgs {
 			log.Infof("[StockConsumer] Received payload: %s", d.Body)
 
-			err := processStockUpdate(d.Body, repo)
+			err := processStockUpdate(d.Body, repo, es)
 
 			if err != nil {
 				log.Errorf("[StockConsumer] Failed to process: %v", err)
@@ -56,7 +61,7 @@ func StartStockUpdateConsumer(conn *amqp.Connection, repo repository.ProductRepo
 	<-forever
 }
 
-func processStockUpdate(body []byte, repo repository.ProductRepositoryInterface) error {
+func processStockUpdate(body []byte, repo repository.ProductRepositoryInterface, es *elasticsearch.TypedClient) error {
 	var msg entity.StockUpdateMessage
 	if err := json.Unmarshal(body, &msg); err != nil {
 		return fmt.Errorf("invalid JSON: %v", err)
@@ -64,23 +69,36 @@ func processStockUpdate(body []byte, repo repository.ProductRepositoryInterface)
 
 	ctx := context.Background()
 
-	product, err := repo.GetProductByID(ctx, msg.ProductID)
+	if err := repo.DecreaseStock(ctx, msg.ProductID, msg.Quantity); err != nil {
+		return err
+	}
+
+	childProduct, err := repo.GetProductByID(ctx, msg.ProductID)
 	if err != nil {
-		return fmt.Errorf("product not found ID %d: %v", msg.ProductID, err)
+		return fmt.Errorf("failed to fetch child product: %v", err)
 	}
 
-	if product.Stock < msg.Quantity {
-		return fmt.Errorf("insufficient stock. ID: %d, Has: %d, Need: %d",
-			product.ID, product.Stock, msg.Quantity)
+	if childProduct.ParentID != nil {
+		parentProduct, err := repo.GetProductByID(ctx, *childProduct.ParentID)
+		if err != nil {
+			return fmt.Errorf("failed to fetch parent product: %v", err)
+		}
+
+		if err := syncToES(ctx, es, parentProduct); err != nil {
+			log.Errorf("failed to sync parent to elasticsearch: %v", err)
+		}
+
+		log.Infof("Stock updated! Child ID %d, Parent ID %d remaining stock: %d",
+			childProduct.ID, parentProduct.ID, parentProduct.Stock)
 	}
 
-	product.Stock = product.Stock - msg.Quantity
-
-	err = repo.DecreaseStock(ctx, msg.ProductID, msg.Quantity)
-	if err != nil {
-		return fmt.Errorf("failed to save stock update: %v", err)
-	}
-
-	log.Infof("Stock updated! Product ID %d remaining stock: %d", product.ID, product.Stock)
 	return nil
+}
+
+func syncToES(ctx context.Context, es *elasticsearch.TypedClient, product *entity.ProductEntity) error {
+	_, err := es.Index("products").
+		Id(strconv.FormatInt(product.ID, 10)).
+		Request(product).
+		Do(ctx)
+	return err
 }

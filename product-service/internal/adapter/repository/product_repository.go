@@ -26,6 +26,7 @@ type ProductRepositoryInterface interface {
 	DeleteProductByID(ctx context.Context, productID int64) error
 	GetHomeProducts(ctx context.Context, limit int) ([]entity.ProductEntity, error)
 	DecreaseStock(ctx context.Context, productID int64, quantity int64) error
+	GetVariantsByParentID(ctx context.Context, parentID int64) ([]entity.ProductEntity, error)
 }
 
 type productRepository struct {
@@ -64,7 +65,7 @@ func (p *productRepository) GetAllProducts(ctx context.Context, query entity.Que
 		status = query.Status
 	}
 
-	orderClause := fmt.Sprintf("%s %s", orderBy, orderType)
+	orderClause := fmt.Sprintf("products.%s %s", orderBy, orderType)
 
 	limit := int(query.Limit)
 	if limit <= 0 {
@@ -79,25 +80,32 @@ func (p *productRepository) GetAllProducts(ctx context.Context, query entity.Que
 
 	q := p.db.WithContext(ctx).Table("products")
 
+	if query.IsParent == "true" {
+		q = q.Where("products.parent_id IS NULL")
+	} else if query.IsParent == "false" {
+		q = q.Where("products.parent_id IS NOT NULL")
+	}
+
 	if query.Search != "" {
 		search := "%" + query.Search + "%"
 		whereSQL := `
-            (name ILIKE ? OR
-			description ILIKE ? OR
-            CAST(status AS TEXT) ILIKE ?)`
+            (products.name ILIKE ? OR
+			products.description ILIKE ? OR
+            CAST(products.status AS TEXT) ILIKE ? OR
+			CAST(products.parent_id AS TEXT) ILIKE ?)`
 
-		q = q.Where(whereSQL, search, search, search)
+		q = q.Where(whereSQL, search, search, search, search)
 	}
 
 	if query.StartPrice > 0 {
-		q = q.Where("sale_price >= ?", query.StartPrice)
+		q = q.Where("products.sale_price >= ?", query.StartPrice)
 	}
 
 	if query.EndPrice > 0 {
-		q = q.Where("sale_price <= ?", query.EndPrice)
+		q = q.Where("products.sale_price <= ?", query.EndPrice)
 	}
 
-	q.Where("status = ?", status)
+	q.Where("products.status = ?", status)
 
 	if err := q.Count(&count).Error; err != nil {
 		log.Errorf("[ProductRepository - 1] GetAllProducts: %v", err)
@@ -105,6 +113,9 @@ func (p *productRepository) GetAllProducts(ctx context.Context, query entity.Que
 	}
 
 	total := (count + int64(limit) - 1) / int64(limit)
+
+	q = q.Select("products.*, categories.name as category_name").
+		Joins("LEFT JOIN categories ON categories.slug = products.category_slug")
 
 	if err := q.Order(orderClause).Limit(limit).Offset(offset).Find(&modelProduct).Error; err != nil {
 		log.Errorf("[ProductRepository - 2] GetAllProducts: %v", err)
@@ -117,6 +128,7 @@ func (p *productRepository) GetAllProducts(ctx context.Context, query entity.Que
 		result = append(result, entity.ProductEntity{
 			ID:           product.ID,
 			CategorySlug: product.CategorySlug,
+			CategoryName: product.CategoryName,
 			ParentID:     product.ParentID,
 			Name:         product.Name,
 			Image:        product.Image,
@@ -175,6 +187,20 @@ func (p *productRepository) SearchProducts(ctx context.Context, query entity.Que
 		})
 	}
 
+	boolQuery.Filter = append(boolQuery.Filter, types.Query{
+		Term: map[string]types.TermQuery{
+			"status.keyword": {
+				Value: "active",
+			},
+		},
+	})
+
+	boolQuery.MustNot = append(boolQuery.MustNot, types.Query{
+		Exists: &types.ExistsQuery{
+			Field: "parent_id",
+		},
+	})
+
 	limit := int(query.Limit)
 	if limit <= 0 {
 		limit = 10
@@ -195,6 +221,7 @@ func (p *productRepository) SearchProducts(ctx context.Context, query entity.Que
 			"name":  "name.keyword",
 			"price": "sale_price",
 			"stock": "stock",
+			"id":    "id",
 		}
 
 		if val, ok := allowedSort[query.OrderBy]; ok {
@@ -232,7 +259,7 @@ func (p *productRepository) SearchProducts(ctx context.Context, query entity.Que
 		if err := json.Unmarshal(hit.Source_, &m); err == nil {
 			products = append(products, entity.ProductEntity{
 				ID:           m.ID,
-				CategorySlug: m.CategorySlug,
+				CategoryName: m.CategoryName,
 				ParentID:     m.ParentID,
 				Name:         m.Name,
 				Image:        m.Image,
@@ -381,12 +408,15 @@ func (p *productRepository) CreateProduct(ctx context.Context, product entity.Pr
 	}
 
 	product.ID = modelProduct.ID
+	product.CreatedAt = modelProduct.CreatedAt
 
 	if len(product.Child) > 0 && len(modelChildren) > 0 {
 		for i := range product.Child {
 			product.Child[i].ID = modelChildren[i].ID
 			product.Child[i].ParentID = &modelProduct.ID
 			product.Child[i].CategorySlug = modelProduct.CategorySlug
+			product.Child[i].CategoryName = product.CategoryName
+			product.Child[i].CreatedAt = modelProduct.CreatedAt
 			product.Child[i].Name = modelProduct.Name
 			product.Child[i].Description = modelProduct.Description
 			product.Child[i].Unit = modelProduct.Unit
@@ -539,8 +569,11 @@ func (p *productRepository) GetHomeProducts(ctx context.Context, limit int) ([]e
 	var modelProduct []model.Product
 
 	err := p.db.WithContext(ctx).Table("products").
-		Where("status = ?", "active").
-		Order("created_at DESC").
+		Select("products.*, categories.name as category_name").
+		Joins("LEFT JOIN categories ON categories.slug = products.category_slug").
+		Where("products.status = ?", "active").
+		Where("products.parent_id IS NULL").
+		Order("products.created_at DESC").
 		Limit(limit).
 		Find(&modelProduct).Error
 
@@ -556,6 +589,8 @@ func (p *productRepository) GetHomeProducts(ctx context.Context, limit int) ([]e
 			ID:           product.ID,
 			Name:         product.Name,
 			Image:        product.Image,
+			CategorySlug: product.CategorySlug,
+			CategoryName: product.CategoryName,
 			RegulerPrice: product.RegulerPrice,
 			SalePrice:    product.SalePrice,
 			Status:       entity.ProductStatus(product.Status),
@@ -565,18 +600,84 @@ func (p *productRepository) GetHomeProducts(ctx context.Context, limit int) ([]e
 }
 
 func (p *productRepository) DecreaseStock(ctx context.Context, productID int64, quantity int64) error {
-	result := p.db.WithContext(ctx).Model(&entity.ProductEntity{}).
+	tx := p.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	var product model.Product
+	if err := tx.Select("id, parent_id").Where("id = ?", productID).First(&product).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	log.Printf("product.ID=%d, product.ParentID=%v", product.ID, product.ParentID)
+
+	result := tx.Model(&model.Product{}).
 		Where("id = ? AND stock >= ?", productID, quantity).
 		UpdateColumn("stock", gorm.Expr("stock - ?", quantity))
 
 	if result.Error != nil {
-		log.Errorf("[ProductRepository - 1] DecreaseStock productID: %d, quantity: %d, error: %v", productID, quantity, result.Error)
+		tx.Rollback()
 		return result.Error
 	}
-
 	if result.RowsAffected == 0 {
-		return fmt.Errorf("insufficient stock or product not found")
+		tx.Rollback()
+		return fmt.Errorf("insufficient stock")
 	}
 
-	return nil
+	if product.ParentID != nil {
+		log.Printf("updating parent stock, parentID=%d", *product.ParentID)
+
+		parentResult := tx.Model(&model.Product{}).
+			Where("id = ?", *product.ParentID).
+			UpdateColumn("stock", gorm.Expr("stock - ?", quantity))
+
+		if parentResult.Error != nil {
+			tx.Rollback()
+			return parentResult.Error
+		}
+
+		if parentResult.RowsAffected == 0 {
+			tx.Rollback()
+			return fmt.Errorf("failed to update parent stock: parent not found or no rows affected")
+		}
+
+		log.Printf("parent stock updated, rows affected=%d", parentResult.RowsAffected)
+	} else {
+		log.Printf("skipping parent update: ParentID is nil")
+	}
+
+	return tx.Commit().Error
+}
+
+func (p *productRepository) GetVariantsByParentID(ctx context.Context, parentID int64) ([]entity.ProductEntity, error) {
+	var modelVariants []model.Product
+
+	if err := p.db.WithContext(ctx).Where("parent_id = ?", parentID).Find(&modelVariants).Error; err != nil {
+		log.Errorf("[ProductRepository] GetVariantsByParentID: %v", err)
+		return nil, err
+	}
+
+	variantEntities := make([]entity.ProductEntity, 0, len(modelVariants))
+
+	for _, variant := range modelVariants {
+		variantEntities = append(variantEntities, entity.ProductEntity{
+			ID:           variant.ID,
+			CategorySlug: variant.CategorySlug,
+			ParentID:     variant.ParentID,
+			Name:         variant.Name,
+			Image:        variant.Image,
+			Description:  variant.Description,
+			RegulerPrice: variant.RegulerPrice,
+			SalePrice:    variant.SalePrice,
+			Unit:         variant.Unit,
+			Weight:       variant.Weight,
+			Stock:        variant.Stock,
+			Variant:      variant.Variant,
+			Status:       entity.ProductStatus(variant.Status),
+		})
+	}
+
+	return variantEntities, nil
 }
