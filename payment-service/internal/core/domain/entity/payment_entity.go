@@ -16,9 +16,10 @@ type PaymentEntity struct {
 	CustomerName      string
 	CustomerEmail     string
 	CustomerAddress   string
-	OrderAt           string
 	OrderRemarks      string
 	OrderStatus       string
+	OrderDate         string
+	OrderTime         string
 	PaymentLogs       []PaymentLogEntity
 }
 

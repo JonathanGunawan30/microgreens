@@ -39,6 +39,14 @@ func (p *paymentRepository) CreatePayment(ctx context.Context, payment entity.Pa
 		PaymentGatewayID: payment.PaymentGatewayID,
 		GrossAmount:      payment.GrossAmount,
 		PaymentURL:       payment.PaymentURL,
+		OrderCode:        payment.OrderCode,
+		ShippingType:     payment.OrderShippingType,
+		OrderDate:        payment.OrderDate,
+		OrderTime:        payment.OrderTime,
+		OrderRemarks:     payment.OrderRemarks,
+		CustomerName:     payment.CustomerName,
+		CustomerEmail:    payment.CustomerEmail,
+		CustomerAddress:  payment.CustomerAddress,
 	}
 
 	err := p.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -136,14 +144,16 @@ func (p *paymentRepository) GetAllPayment(ctx context.Context, req entity.Paymen
 
 	for _, val := range modelPayments {
 		entities = append(entities, entity.PaymentEntity{
-			ID:               val.ID,
-			OrderID:          val.OrderID,
-			UserID:           val.UserID,
-			PaymentMethod:    val.PaymentMethod,
-			PaymentStatus:    val.PaymentStatus,
-			GrossAmount:      val.GrossAmount,
-			PaymentGatewayID: val.PaymentGatewayID,
-			PaymentURL:       val.PaymentURL,
+			ID:                val.ID,
+			OrderID:           val.OrderID,
+			UserID:            val.UserID,
+			PaymentMethod:     val.PaymentMethod,
+			PaymentStatus:     val.PaymentStatus,
+			GrossAmount:       val.GrossAmount,
+			PaymentGatewayID:  val.PaymentGatewayID,
+			PaymentURL:        val.PaymentURL,
+			OrderCode:         val.OrderCode,
+			OrderShippingType: val.ShippingType,
 		})
 	}
 
@@ -169,14 +179,22 @@ func (p *paymentRepository) GetPaymentDetail(ctx context.Context, paymentID int6
 	}
 
 	return &entity.PaymentEntity{
-		ID:               modelPayment.ID,
-		OrderID:          modelPayment.OrderID,
-		UserID:           modelPayment.UserID,
-		PaymentMethod:    modelPayment.PaymentMethod,
-		PaymentStatus:    modelPayment.PaymentStatus,
-		GrossAmount:      modelPayment.GrossAmount,
-		PaymentGatewayID: modelPayment.PaymentGatewayID,
-		PaymentURL:       modelPayment.PaymentURL,
-		PaymentAt:        modelPayment.CreatedAt.Format("2006-01-02 15:04:05"),
+		ID:                modelPayment.ID,
+		OrderID:           modelPayment.OrderID,
+		UserID:            modelPayment.UserID,
+		PaymentMethod:     modelPayment.PaymentMethod,
+		PaymentStatus:     modelPayment.PaymentStatus,
+		GrossAmount:       modelPayment.GrossAmount,
+		PaymentGatewayID:  modelPayment.PaymentGatewayID,
+		PaymentURL:        modelPayment.PaymentURL,
+		PaymentAt:         modelPayment.CreatedAt.Format("2006-01-02 15:04:05"),
+		OrderCode:         modelPayment.OrderCode,
+		OrderShippingType: modelPayment.ShippingType,
+		OrderDate:         modelPayment.OrderDate,
+		OrderTime:         modelPayment.OrderTime,
+		OrderRemarks:      modelPayment.OrderRemarks,
+		CustomerName:      modelPayment.CustomerName,
+		CustomerEmail:     modelPayment.CustomerEmail,
+		CustomerAddress:   modelPayment.CustomerAddress,
 	}, nil
 }
