@@ -42,6 +42,10 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("[initConfig] Error reading config file, %s", err)
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			log.Info("[initConfig] No .env file found, using environment variables")
+		} else {
+			log.Fatalf("[initConfig] Error reading config file, %s", err)
+		}
 	}
 }

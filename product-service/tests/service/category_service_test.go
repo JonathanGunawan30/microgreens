@@ -5,7 +5,7 @@ import (
 	"errors"
 	"product-service/internal/core/domain/entity"
 	service2 "product-service/internal/core/service"
-	repoMocks "product-service/mocks/repository"
+	repoMocks "product-service/tests/mocks/repository"
 	"product-service/utils/message"
 	"testing"
 

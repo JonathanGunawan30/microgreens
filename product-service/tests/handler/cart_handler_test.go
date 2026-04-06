@@ -10,7 +10,7 @@ import (
 	"product-service/internal/adapter/handler/request"
 	"product-service/internal/adapter/handler/response"
 	"product-service/internal/core/domain/entity"
-	svcMocks "product-service/mocks/service"
+	svcMocks "product-service/tests/mocks/service"
 	"testing"
 
 	"github.com/go-playground/validator/v10"

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"product-service/internal/core/domain/entity"
 	service2 "product-service/internal/core/service"
-	repoMocks "product-service/mocks/repository"
+	"product-service/tests/mocks/repository"
 	"product-service/utils/message"
 	"testing"
 
@@ -14,8 +14,8 @@ import (
 )
 
 func TestProductService_GetAllProducts(t *testing.T) {
-	repo := new(repoMocks.ProductRepositoryInterface)
-	repoCat := new(repoMocks.CategoryRepositoryInterface)
+	repo := new(mocks.ProductRepositoryInterface)
+	repoCat := new(mocks.CategoryRepositoryInterface)
 	svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
 	ctx := context.Background()
 	query := entity.QueryStringProduct{}
@@ -31,8 +31,8 @@ func TestProductService_GetAllProducts(t *testing.T) {
 }
 
 func TestProductService_GetProductByID(t *testing.T) {
-	repo := new(repoMocks.ProductRepositoryInterface)
-	repoCat := new(repoMocks.CategoryRepositoryInterface)
+	repo := new(mocks.ProductRepositoryInterface)
+	repoCat := new(mocks.CategoryRepositoryInterface)
 	svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
 	ctx := context.Background()
 
@@ -57,8 +57,8 @@ func TestProductService_GetProductByID(t *testing.T) {
 }
 
 func TestProductService_CreateProduct(t *testing.T) {
-	repo := new(repoMocks.ProductRepositoryInterface)
-	repoCat := new(repoMocks.CategoryRepositoryInterface)
+	repo := new(mocks.ProductRepositoryInterface)
+	repoCat := new(mocks.CategoryRepositoryInterface)
 	svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
 	ctx := context.Background()
 
@@ -75,8 +75,8 @@ func TestProductService_CreateProduct(t *testing.T) {
 }
 
 func TestProductService_UpdateProduct(t *testing.T) {
-	repo := new(repoMocks.ProductRepositoryInterface)
-	repoCat := new(repoMocks.CategoryRepositoryInterface)
+	repo := new(mocks.ProductRepositoryInterface)
+	repoCat := new(mocks.CategoryRepositoryInterface)
 	svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
 	ctx := context.Background()
 
@@ -92,8 +92,8 @@ func TestProductService_UpdateProduct(t *testing.T) {
 }
 
 func TestProductService_DeleteProductByID(t *testing.T) {
-	repo := new(repoMocks.ProductRepositoryInterface)
-	repoCat := new(repoMocks.CategoryRepositoryInterface)
+	repo := new(mocks.ProductRepositoryInterface)
+	repoCat := new(mocks.CategoryRepositoryInterface)
 	svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
 	ctx := context.Background()
 
