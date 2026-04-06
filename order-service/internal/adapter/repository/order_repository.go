@@ -20,6 +20,7 @@ type OrderRepositoryInterface interface {
 	GetOrderByOrderCode(ctx context.Context, code string) (*entity.OrderEntity, error)
 	CreateOrder(ctx context.Context, req entity.OrderEntity) (int64, error)
 	UpdateStatusOrder(ctx context.Context, req entity.OrderEntity) (int64, string, string, error)
+	UpdatePaymentMethod(ctx context.Context, orderID int64, paymentMethod string) error
 }
 
 type orderRepository struct {
@@ -83,21 +84,32 @@ func (o *orderRepository) GetAllOrders(ctx context.Context, query entity.QuerySt
 		var orderItemEntities []entity.OrderItemEntity
 		for _, item := range order.OrderItems {
 			orderItemEntities = append(orderItemEntities, entity.OrderItemEntity{
-				ID:        item.ID,
-				OrderID:   item.OrderID,
-				ProductID: item.ProductID,
-				Quantity:  item.Quantity,
+				ID:            item.ID,
+				OrderID:       item.OrderID,
+				ProductID:     item.ProductID,
+				Quantity:      item.Quantity,
+				ProductImage:  item.ProductImage,
+				ProductUnit:   item.ProductUnit,
+				Price:         item.Price,
+				ProductName:   item.ProductName,
+				ProductWeight: item.ProductWeight,
 			})
 		}
 
 		result = append(result, entity.OrderEntity{
-			ID:          order.ID,
-			OrderCode:   order.OrderCode,
-			BuyerID:     order.BuyerID,
-			OrderDate:   order.OrderDate.Format("2006-01-02 15:04:05"),
-			Status:      order.Status,
-			TotalAmount: order.TotalAmount,
-			OrderItems:  orderItemEntities,
+			ID:            order.ID,
+			OrderCode:     order.OrderCode,
+			BuyerID:       order.BuyerID,
+			OrderDate:     order.OrderDate.Format("2006-01-02"),
+			OrderTime:     order.OrderTime,
+			Status:        order.Status,
+			TotalAmount:   order.TotalAmount,
+			PaymentMethod: order.PaymentMethod,
+			OrderItems:    orderItemEntities,
+			BuyerName:     order.BuyerName,
+			BuyerEmail:    order.BuyerEmail,
+			BuyerPhone:    order.BuyerPhone,
+			BuyerAddress:  order.BuyerAddress,
 		})
 	}
 
@@ -121,23 +133,37 @@ func (o *orderRepository) GetOrderByID(ctx context.Context, orderID int64) (*ent
 
 	for _, item := range modelOrder.OrderItems {
 		orderItemEntities = append(orderItemEntities, entity.OrderItemEntity{
-			ID:        item.ID,
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
+			ID:            item.ID,
+			OrderID:       modelOrder.ID,
+			OrderCode:     modelOrder.OrderCode,
+			ProductID:     item.ProductID,
+			Quantity:      item.Quantity,
+			Price:         item.Price,
+			ProductName:   item.ProductName,
+			ProductImage:  item.ProductImage,
+			ProductUnit:   item.ProductUnit,
+			ProductWeight: item.ProductWeight,
 		})
 	}
 
 	return &entity.OrderEntity{
-		ID:           modelOrder.ID,
-		OrderCode:    modelOrder.OrderCode,
-		BuyerID:      modelOrder.BuyerID,
-		OrderDate:    modelOrder.OrderDate.Format("2006-01-02 15:04:05"),
-		Status:       modelOrder.Status,
-		TotalAmount:  modelOrder.TotalAmount,
-		Remarks:      modelOrder.Remarks,
-		ShippingFee:  modelOrder.ShippingFee,
-		ShippingType: modelOrder.ShippingType,
-		OrderItems:   orderItemEntities,
+		ID:            modelOrder.ID,
+		OrderCode:     modelOrder.OrderCode,
+		BuyerID:       modelOrder.BuyerID,
+		OrderDate:     modelOrder.OrderDate.Format("2006-01-02"),
+		OrderTime:     modelOrder.OrderTime,
+		Status:        modelOrder.Status,
+		TotalAmount:   modelOrder.TotalAmount,
+		Remarks:       modelOrder.Remarks,
+		ShippingFee:   modelOrder.ShippingFee,
+		ShippingType:  modelOrder.ShippingType,
+		PaymentMethod: modelOrder.PaymentMethod,
+		BuyerName:     modelOrder.BuyerName,
+		BuyerEmail:    modelOrder.BuyerEmail,
+		BuyerPhone:    modelOrder.BuyerPhone,
+		BuyerAddress:  modelOrder.BuyerAddress,
+		CreatedAt:     modelOrder.CreatedAt,
+		OrderItems:    orderItemEntities,
 	}, nil
 }
 
@@ -156,8 +182,13 @@ func (o *orderRepository) CreateOrder(ctx context.Context, req entity.OrderEntit
 	var orderItems []model.OrderItem
 	for _, item := range req.OrderItems {
 		orderItems = append(orderItems, model.OrderItem{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
+			ProductID:     item.ProductID,
+			Quantity:      item.Quantity,
+			Price:         item.Price,
+			ProductName:   item.ProductName,
+			ProductImage:  item.ProductImage,
+			ProductUnit:   item.ProductUnit,
+			ProductWeight: item.ProductWeight,
 		})
 	}
 
@@ -171,6 +202,10 @@ func (o *orderRepository) CreateOrder(ctx context.Context, req entity.OrderEntit
 		ShippingFee:  req.ShippingFee,
 		OrderTime:    req.OrderTime,
 		Remarks:      req.Remarks,
+		BuyerName:    req.BuyerName,
+		BuyerEmail:   req.BuyerEmail,
+		BuyerAddress: req.BuyerAddress,
+		BuyerPhone:   req.BuyerPhone,
 		OrderItems:   orderItems,
 	}
 
@@ -233,22 +268,40 @@ func (o *orderRepository) GetOrderByOrderCode(ctx context.Context, code string) 
 
 	for _, item := range modelOrder.OrderItems {
 		orderItemEntities = append(orderItemEntities, entity.OrderItemEntity{
-			ID:        item.ID,
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
+			ID:            item.ID,
+			ProductID:     item.ProductID,
+			Quantity:      item.Quantity,
+			Price:         item.Price,
+			ProductName:   item.ProductName,
+			ProductImage:  item.ProductImage,
+			ProductUnit:   item.ProductUnit,
+			ProductWeight: item.ProductWeight,
 		})
 	}
 
 	return &entity.OrderEntity{
-		ID:           modelOrder.ID,
-		OrderCode:    modelOrder.OrderCode,
-		BuyerID:      modelOrder.BuyerID,
-		OrderDate:    modelOrder.OrderDate.Format("2006-01-02 15:04:05"),
-		Status:       modelOrder.Status,
-		TotalAmount:  modelOrder.TotalAmount,
-		Remarks:      modelOrder.Remarks,
-		ShippingFee:  modelOrder.ShippingFee,
-		ShippingType: modelOrder.ShippingType,
-		OrderItems:   orderItemEntities,
+		ID:            modelOrder.ID,
+		OrderCode:     modelOrder.OrderCode,
+		BuyerID:       modelOrder.BuyerID,
+		OrderDate:     modelOrder.OrderDate.Format("2006-01-02 15:04:05"),
+		Status:        modelOrder.Status,
+		TotalAmount:   modelOrder.TotalAmount,
+		Remarks:       modelOrder.Remarks,
+		ShippingFee:   modelOrder.ShippingFee,
+		ShippingType:  modelOrder.ShippingType,
+		PaymentMethod: modelOrder.PaymentMethod,
+		BuyerName:     modelOrder.BuyerName,
+		BuyerEmail:    modelOrder.BuyerEmail,
+		BuyerPhone:    modelOrder.BuyerPhone,
+		BuyerAddress:  modelOrder.BuyerAddress,
+		OrderItems:    orderItemEntities,
 	}, nil
+}
+
+func (o *orderRepository) UpdatePaymentMethod(ctx context.Context, orderID int64, paymentMethod string) error {
+	return o.db.WithContext(ctx).Model(model.Order{}).
+		Where("id = ?", orderID).
+		Updates(map[string]any{
+			"payment_method": paymentMethod,
+		}).Error
 }

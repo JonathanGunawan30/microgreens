@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"order-service/config"
-	"order-service/internal/adapter"
 	"order-service/internal/adapter/handler"
 	"order-service/internal/adapter/repository"
 	"order-service/internal/core/service"
@@ -38,11 +37,11 @@ func RunServer() {
 	}
 
 	orderRepository := repository.NewOrderRepository(db.DB)
+	userSnapshotRepository := repository.NewUserSnapshotRepository(db.DB)
+	prodSnapshotRepository := repository.NewProductSnapshotRepository(db.DB)
 	elasticRepository := repository.NewElasticRepository(elasticsearchClient)
 
-	httpClient := adapter.NewHttpClient(cfg)
-
-	orderService := service.NewOrderService(orderRepository, cfg, httpClient, rabbitMQClient, elasticRepository)
+	orderService := service.NewOrderService(orderRepository, userSnapshotRepository, prodSnapshotRepository, cfg, rabbitMQClient, elasticRepository)
 
 	e := echo.New()
 	e.Use(middleware.CORS())

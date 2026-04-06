@@ -3,10 +3,9 @@ package request
 type CreateOrderRequest struct {
 	BuyerID      int64                `json:"buyer_id" validate:"required"`
 	OrderDate    string               `json:"order_date" validate:"required"`
-	TotalAmount  float64              `json:"total_amount" validate:"required"`
-	ShippingType string               `json:"shipping_type" validate:"required"`
-	PaymentType  string               `json:"payment_type" validate:"required"`
-	Remarks      string               `json:"remarks"`
+	ShippingType string               `json:"shipping_type" validate:"required,max=20"`
+	PaymentType  string               `json:"payment_type" validate:"required,max=50"`
+	Remarks      string               `json:"remarks" validate:"max=500"`
 	OrderTime    string               `json:"order_time"  validate:"required"`
 	OrderDetails []OrderDetailRequest `json:"order_details"  validate:"required"`
 }
@@ -17,6 +16,6 @@ type OrderDetailRequest struct {
 }
 
 type OrderUpdateStatusRequest struct {
-	Status  string `json:"status" validate:"required"`
-	Remarks string `json:"remarks"`
+	Status  string `json:"status" validate:"required,max=20"`
+	Remarks string `json:"remarks" validate:"max=500"`
 }

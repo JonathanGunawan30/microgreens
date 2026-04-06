@@ -13,6 +13,10 @@ import (
 )
 
 func PublishUpdateStock(conn *amqp.Connection, productID, quantity int64, queueName string) {
+	if conn == nil {
+		log.Errorf("RabbitMQ connection is nil")
+		return
+	}
 	ch, err := conn.Channel()
 	if err != nil {
 		log.Errorf("failed to open a channel: %v", err)
@@ -55,17 +59,19 @@ func PublishUpdateStock(conn *amqp.Connection, productID, quantity int64, queueN
 	log.Infof("Successfully publish order: %d", order)
 }
 
-func PublishOrderToQueue(conn *amqp.Connection, order entity.OrderEntity, queueName string) error {
+func PublishOrderEvent(conn *amqp.Connection, order entity.OrderEntity, eventName string) error {
+	if conn == nil {
+		return fmt.Errorf("rabbitmq connection is nil")
+	}
 	ch, err := conn.Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
 	}
-
 	defer ch.Close()
 
-	_, err = ch.QueueDeclare(queueName, true, false, false, false, nil)
+	err = ch.ExchangeDeclare(eventName, "fanout", true, false, false, false, nil)
 	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %w", err)
+		return fmt.Errorf("failed to declare exchange: %w", err)
 	}
 
 	body, err := json.Marshal(order)
@@ -76,7 +82,7 @@ func PublishOrderToQueue(conn *amqp.Connection, order entity.OrderEntity, queueN
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err = ch.PublishWithContext(ctx, "", queueName, false, false,
+	err = ch.PublishWithContext(ctx, eventName, "", false, false,
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        body,
@@ -87,11 +93,14 @@ func PublishOrderToQueue(conn *amqp.Connection, order entity.OrderEntity, queueN
 		return fmt.Errorf("failed to publish message: %w", err)
 	}
 
-	log.Infof("Successfully publish order: %v", order)
+	log.Infof("Published order event: %v", order.ID)
 	return nil
 }
 
 func PublishEmailUpdateStatus(conn *amqp.Connection, email, message, queueName string, userID int64) error {
+	if conn == nil {
+		return fmt.Errorf("rabbitmq connection is nil")
+	}
 	ch, err := conn.Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
@@ -141,6 +150,9 @@ func PublishEmailUpdateStatus(conn *amqp.Connection, email, message, queueName s
 }
 
 func PublishUpdateStatus(conn *amqp.Connection, orderID int64, status string, queueName string) error {
+	if conn == nil {
+		return fmt.Errorf("rabbitmq connection is nil")
+	}
 	ch, err := conn.Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
@@ -182,6 +194,9 @@ func PublishUpdateStatus(conn *amqp.Connection, orderID int64, status string, qu
 }
 
 func PublishSendPushNotifUpdateStatus(conn *amqp.Connection, message, queueName string, userID int64) error {
+	if conn == nil {
+		return fmt.Errorf("rabbitmq connection is nil")
+	}
 	ch, err := conn.Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
