@@ -9,7 +9,7 @@ type Notification struct {
 	Message          string     `gorm:"type:text;not null" json:"message"`
 	NotificationType string     `gorm:"type:varchar(50);not null" json:"notification_type"`
 	Status           *string    `gorm:"type:varchar(50)" json:"status"`
-	ReceiverID       *int       `json:"receiver_id"`
+	ReceiverID       *int64     `json:"receiver_id"`
 	Subject          *string    `gorm:"type:varchar(255)" json:"subject"`
 	ReceiverEmail    *string    `gorm:"type:varchar(255)" json:"receiver_email"`
 	SendAt           *time.Time `gorm:"column:send_at;type:timestamp" json:"send_at"`
