@@ -34,3 +34,13 @@ type OrderDetail struct {
 	ProductPrice int64  `json:"product_price"`
 	Quantity     int64  `json:"quantity"`
 }
+
+type OrderEvent struct {
+	ID           int64   `json:"id"`
+	OrderCode    string  `json:"order_code"`
+	TotalAmount  float64 `json:"total_amount"`
+	ShippingType string  `json:"shipping_type"`
+	Remarks      string  `json:"remarks"`
+	OrderDate    string  `json:"order_date"`
+	OrderTime    string  `json:"order_time"`
+}

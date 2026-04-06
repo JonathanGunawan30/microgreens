@@ -12,6 +12,8 @@ type App struct {
 	ProductServiceUrl string `json:"product_service_url"`
 	UserServiceUrl    string `json:"user_service_url"`
 	OrderServiceUrl   string `json:"order_service_url"`
+
+	InternalKey string `json:"internal_key"`
 }
 
 type PsqlDB struct {
@@ -46,6 +48,17 @@ type PublisherName struct {
 	PaymentSuccess string `json:"payment_success"`
 }
 
+type ExchangeName struct {
+	PaymentEvent string `json:"payment_event"`
+	OrderEvent   string `json:"order_event"`
+	UserEvent    string `json:"user_event"`
+}
+
+type QueueName struct {
+	OrderSnapshot string `json:"order_snapshot"`
+	UserSnapshot  string `json:"user_snapshot"`
+}
+
 type Config struct {
 	App           App            `json:"app"`
 	Psql          PsqlDB         `json:"psql"`
@@ -53,6 +66,8 @@ type Config struct {
 	RabbitMQ      RabbitmqConfig `json:"rabbitmq"`
 	Midtrans      Midtrans       `json:"midtrans"`
 	PublisherName PublisherName  `json:"publisher_name"`
+	ExchangeName  ExchangeName   `json:"exchange_name"`
+	QueueName     QueueName      `json:"queue_name"`
 }
 
 func NewConfig() *Config {
@@ -65,6 +80,7 @@ func NewConfig() *Config {
 			ProductServiceUrl: viper.GetString("PRODUCT_SERVICE_URL"),
 			UserServiceUrl:    viper.GetString("USER_SERVICE_URL"),
 			OrderServiceUrl:   viper.GetString("ORDER_SERVICE_URL"),
+			InternalKey:       viper.GetString("INTERNAL_KEY"),
 		},
 		Psql: PsqlDB{
 			Host:      viper.GetString("DATABASE_HOST"),
@@ -93,6 +109,15 @@ func NewConfig() *Config {
 		},
 		PublisherName: PublisherName{
 			PaymentSuccess: viper.GetString("PUBLISHER_PAYMENT_SUCCESS"),
+		},
+		ExchangeName: ExchangeName{
+			PaymentEvent: viper.GetString("EXCHANGE_PAYMENT_EVENT"),
+			OrderEvent:   viper.GetString("EXCHANGE_ORDER_EVENT"),
+			UserEvent:    viper.GetString("EXCHANGE_USER_EVENT"),
+		},
+		QueueName: QueueName{
+			OrderSnapshot: viper.GetString("QUEUE_ORDER_SNAPSHOT_DB"),
+			UserSnapshot:  viper.GetString("QUEUE_USER_SNAPSHOT_DB"),
 		},
 	}
 }

@@ -11,7 +11,6 @@ import (
 	"payment-service/internal/core/service"
 	"payment-service/utils/conv"
 	"payment-service/utils/message"
-	"payment-service/utils/security"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -51,6 +50,20 @@ func NewPaymentHandler(paymentService service.PaymentServiceInterface, e *echo.E
 	return payment
 }
 
+// CreatePayment godoc
+// @Summary Create payment
+// @Description Process a new payment for an order
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body request.PaymentRequest true "Payment Request"
+// @Success 201 {object} response.DefaultResponse{data=map[string]interface{}} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /auth/payments [post]
 func (p *paymentHandler) CreatePayment(c echo.Context) error {
 	var (
 		ctx = c.Request().Context()
@@ -67,17 +80,14 @@ func (p *paymentHandler) CreatePayment(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, response.Error(err.Error()))
 	}
 
-	accessToken := utils.GetTokenFromHeader(c)
-
 	paymentEntity := entity.PaymentEntity{
 		OrderID:       req.OrderID,
 		PaymentMethod: req.PaymentMethod,
-		GrossAmount:   req.GrossAmount,
 		UserID:        req.UserID,
 		Remarks:       req.Remarks,
 	}
 
-	processPayment, err := p.paymentService.ProcessPayment(ctx, paymentEntity, accessToken)
+	processPayment, err := p.paymentService.ProcessPayment(ctx, paymentEntity)
 	if err != nil {
 		log.Errorf("[PaymentHandler - 3] CreatePayment: %v", err)
 
@@ -96,6 +106,18 @@ func (p *paymentHandler) CreatePayment(c echo.Context) error {
 
 }
 
+// MidtransWebHook godoc
+// @Summary Midtrans webhook
+// @Description Receive and process payment status callback from Midtrans
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param request body request.MidtransWebhookPayload true "Midtrans Webhook Payload"
+// @Success 200 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 403 {object} response.DefaultResponse "Invalid Signature"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /payments/webhook [post]
 func (p *paymentHandler) MidtransWebHook(c echo.Context) error {
 	var (
 		ctx     = c.Request().Context()
@@ -122,17 +144,16 @@ func (p *paymentHandler) MidtransWebHook(c echo.Context) error {
 	var newStatus string
 	switch payload.TransactionStatus {
 	case "capture", "settlement":
-		newStatus = "success"
+		newStatus = "Success"
 	case "deny", "cancel", "expire":
-		newStatus = "failed"
+		newStatus = "Failed"
 	case "pending":
-		newStatus = "pending"
+		newStatus = "Pending"
 	default:
 		return c.JSON(http.StatusOK, response.Success("Status ignored", nil))
 	}
 
-	accessToken := utils.GetTokenFromHeader(c)
-	err := p.paymentService.UpdateStatusByOrderCode(ctx, payload.OrderID, newStatus, accessToken)
+	err := p.paymentService.UpdateStatusByOrderCode(ctx, payload.OrderID, newStatus)
 	if err != nil {
 		log.Errorf("[PaymentHandler] Failed to update DB for Order %s: %v", payload.OrderID, err)
 		return c.JSON(http.StatusInternalServerError, response.Error("Internal Server Error"))
@@ -141,6 +162,21 @@ func (p *paymentHandler) MidtransWebHook(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.Success("Success", nil))
 }
 
+// GetAllPayments godoc
+// @Summary Get all payments
+// @Description Get paginated list of payments. Customer role will only see their own payments, admin sees all.
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 10)"
+// @Success 200 {object} response.DefaultResponseWithPagination{data=[]response.PaymentListResponse} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /auth/payments [get]
+// @Router /admin/payments [get]
 func (p *paymentHandler) GetAllPayments(c echo.Context) error {
 	var (
 		ctx          = c.Request().Context()
@@ -168,9 +204,7 @@ func (p *paymentHandler) GetAllPayments(c echo.Context) error {
 		paymentQuery.UserID = userData.ID
 	}
 
-	accessToken := utils.GetTokenFromHeader(c)
-
-	entities, totalData, totalPage, err := p.paymentService.GetAllPayments(ctx, paymentQuery, accessToken)
+	entities, totalData, totalPage, err := p.paymentService.GetAllPayments(ctx, paymentQuery)
 	if err != nil {
 		log.Errorf("[PaymentHandler] GetAllAdmin: %v", err)
 		return c.JSON(http.StatusInternalServerError, response.Error("Internal Server Error"))
@@ -190,6 +224,21 @@ func (p *paymentHandler) GetAllPayments(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.SuccessWithPagination("Success", resp, paymentQuery.Page, paymentQuery.Limit, totalData, totalPage))
 }
 
+// GetPaymentDetail godoc
+// @Summary Get payment detail
+// @Description Get payment detail by ID. Customer role can only access their own payment.
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Payment ID"
+// @Success 200 {object} response.DefaultResponse{data=response.PaymentDetailResponse} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /auth/payments/{id} [get]
+// @Router /admin/payments/{id} [get]
 func (p *paymentHandler) GetPaymentDetail(c echo.Context) error {
 	var (
 		ctx  = c.Request().Context()
@@ -203,8 +252,6 @@ func (p *paymentHandler) GetPaymentDetail(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.Error("invalid payment id"))
 	}
 
-	accessToken := utils.GetTokenFromHeader(c)
-
 	userData, ok := c.Get("user").(entity.JwtUserData)
 	if !ok {
 		return c.JSON(http.StatusUnauthorized, response.Error("Unauthorized"))
@@ -216,7 +263,7 @@ func (p *paymentHandler) GetPaymentDetail(c echo.Context) error {
 		filterUserID = userData.ID
 	}
 
-	paymentDetail, err := p.paymentService.GetPaymentDetail(ctx, paymentID, accessToken, filterUserID)
+	paymentDetail, err := p.paymentService.GetPaymentDetail(ctx, paymentID, filterUserID)
 	if err != nil {
 		log.Errorf("[PaymentHandler] GetPaymentDetail: %v", err)
 
@@ -239,7 +286,8 @@ func (p *paymentHandler) GetPaymentDetail(c echo.Context) error {
 	resp.GrossAmount = paymentDetail.GrossAmount
 	resp.ShippingType = paymentDetail.OrderShippingType
 	resp.PaymentAt = paymentDetail.PaymentAt
-	resp.OrderAt = paymentDetail.OrderAt
+	resp.OrderTime = paymentDetail.OrderTime
+	resp.OrderDate = paymentDetail.OrderDate
 	resp.OrderRemarks = paymentDetail.OrderRemarks
 	resp.CustomerName = paymentDetail.CustomerName
 	resp.CustomerAddress = paymentDetail.CustomerAddress

@@ -17,7 +17,8 @@ type PaymentDetailResponse struct {
 	GrossAmount     float64 `json:"gross_amount"`
 	ShippingType    string  `json:"shipping_type"`
 	PaymentAt       string  `json:"payment_at"`
-	OrderAt         string  `json:"order_at"`
+	OrderDate       string  `json:"order_date"`
+	OrderTime       string  `json:"order_time"`
 	OrderRemarks    string  `json:"order_remarks"`
 	CustomerName    string  `json:"customer_name"`
 	CustomerAddress string  `json:"customer_address"`

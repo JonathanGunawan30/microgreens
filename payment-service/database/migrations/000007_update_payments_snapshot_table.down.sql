@@ -1,0 +1,3 @@
+ALTER TABLE payments DROP COLUMN IF EXISTS order_date;
+ALTER TABLE payments DROP COLUMN IF EXISTS order_time;
+ALTER TABLE payments ADD COLUMN order_at TIMESTAMP;
