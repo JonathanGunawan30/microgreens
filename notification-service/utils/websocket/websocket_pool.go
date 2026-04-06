@@ -8,11 +8,11 @@ import (
 )
 
 var (
-	wsClients      = make(map[int]*websocket.Conn)
+	wsClients      = make(map[int64]*websocket.Conn)
 	wsClientsMutex = sync.RWMutex{}
 )
 
-func AddWebSocketConn(userID int, conn *websocket.Conn) {
+func AddWebSocketConn(userID int64, conn *websocket.Conn) {
 	wsClientsMutex.Lock()
 	defer wsClientsMutex.Unlock()
 
@@ -30,7 +30,7 @@ func AddWebSocketConn(userID int, conn *websocket.Conn) {
 	})
 }
 
-func GetWebSocketConn(userID int) *websocket.Conn {
+func GetWebSocketConn(userID int64) *websocket.Conn {
 	wsClientsMutex.RLock()
 	defer wsClientsMutex.RUnlock()
 
@@ -41,7 +41,7 @@ func GetWebSocketConn(userID int) *websocket.Conn {
 	return conn
 }
 
-func RemoveWebSocketConn(userID int) {
+func RemoveWebSocketConn(userID int64) {
 	wsClientsMutex.Lock()
 	defer wsClientsMutex.Unlock()
 
