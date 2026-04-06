@@ -12,17 +12,30 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func StartIndexingCustomer(conn *amqp.Connection, esClient *elasticsearch.TypedClient, queueName string) {
+func StartIndexingConsumer(conn *amqp.Connection, esClient *elasticsearch.TypedClient, queueName, exchangeName string) {
+	if conn == nil {
+		return
+	}
 	ch, err := conn.Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
 	defer ch.Close()
 
+	err = ch.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil)
+	if err != nil {
+		log.Fatalf("Failed to declare exchange: %v", err)
+	}
+
 	q, err := ch.QueueDeclare(queueName, true, false, false, false, nil)
 
 	if err != nil {
 		log.Fatalf("Failed to declare a queue: %v", err)
+	}
+
+	err = ch.QueueBind(q.Name, "", exchangeName, false, nil)
+	if err != nil {
+		log.Fatalf("Failed to bind queue: %v", err)
 	}
 
 	err = ch.Qos(1, 0, false)
@@ -59,7 +72,7 @@ func StartIndexingCustomer(conn *amqp.Connection, esClient *elasticsearch.TypedC
 }
 
 func processMessage(body []byte, esClient *elasticsearch.TypedClient) error {
-	var msg entity.EsSyncMessage
+	var msg entity.ProductEvent
 	if err := json.Unmarshal(body, &msg); err != nil {
 		return fmt.Errorf("error decoding JSON wrapper: %v", err)
 	}

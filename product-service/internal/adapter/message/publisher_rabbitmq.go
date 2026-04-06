@@ -1,83 +1,54 @@
 package message
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"product-service/internal/core/domain/entity"
-	"time"
 
 	"github.com/labstack/gommon/log"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func PublishProductToQueue(conn *amqp.Connection, msg entity.EsSyncMessage, queueName string) error {
+func PublishProductEvent(conn *amqp.Connection, product entity.ProductEntity, exchangeName string, action entity.ActionType) error {
+	if conn == nil {
+		return nil
+	}
 	ch, err := conn.Channel()
 	if err != nil {
-		return fmt.Errorf("failed to open a channel: %w", err)
+		log.Errorf("Failed to open a channel: %v", err)
+		return err
 	}
 	defer ch.Close()
 
-	_, err = ch.QueueDeclare(
-		queueName,
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
+	err = ch.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil)
 	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %w", err)
+		log.Errorf("Failed to declare exchange: %v", err)
+		return err
 	}
 
-	body, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal msg: %w", err)
+	payload := entity.ProductEvent{
+		Action: action,
+		Data:   &product,
+		ID:     product.ID,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	body, err := json.Marshal(payload)
+	if err != nil {
+		log.Errorf("Failed to marshal: %v", err)
+		return err
+	}
 
-	err = ch.PublishWithContext(
-		ctx,
-		"",
-		queueName,
-		false,
-		false,
+	err = ch.Publish(exchangeName, "", false, false,
 		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		},
-	)
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp.Persistent,
+		})
 
 	if err != nil {
-		return fmt.Errorf("failed to publish message: %w", err)
+		log.Errorf("Failed to publish: %v", err)
+		return err
 	}
 
-	log.Infof("Successfully published msg Action: %s, ID: %d to queue", msg.Action, msg.ID)
+	log.Infof("Published product event action: %s, ID: %d", action, product.ID)
 	return nil
-}
-
-func PublishProductWithRetry(conn *amqp.Connection, msg entity.EsSyncMessage, queueName string) {
-	const (
-		maxRetries    = 3
-		retryInterval = 2 * time.Second
-	)
-
-	for i := 0; i < maxRetries; i++ {
-		err := PublishProductToQueue(conn, msg, queueName)
-		if err == nil {
-			// success
-			return
-		}
-
-		log.Errorf("[Attempt %d/%d] Failed to publish message (Action: %s, ID: %d): %v",
-			i+1, maxRetries, msg.Action, msg.ID, err)
-
-		// cooldown
-		time.Sleep(retryInterval)
-	}
-
-	log.Errorf("[CRITICAL] GAVE UP publishing message Action: %s, ID: %d. Data might be out of sync.",
-		msg.Action, msg.ID)
 }
