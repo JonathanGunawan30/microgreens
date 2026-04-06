@@ -7,6 +7,7 @@
 
 # Environment Variables
 .env
+.env.docker
 */.env
 
 # Editor directories

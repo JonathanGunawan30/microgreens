@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/elastic/go-elasticsearch/v9"
+	"github.com/elastic/go-elasticsearch/v8"
 )
 
 func (cfg *Config) NewElasticsearchClient() (*elasticsearch.TypedClient, error) {

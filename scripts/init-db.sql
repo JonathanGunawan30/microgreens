@@ -1,0 +1,5 @@
+CREATE DATABASE sayur_user_service;
+CREATE DATABASE sayur_product_service;
+CREATE DATABASE sayur_order_service;
+CREATE DATABASE sayur_payment_service;
+CREATE DATABASE sayur_notification_service;

@@ -8,7 +8,7 @@ import (
 
 	"github.com/labstack/gommon/log"
 
-	"github.com/elastic/go-elasticsearch/v9"
+	"github.com/elastic/go-elasticsearch/v8"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

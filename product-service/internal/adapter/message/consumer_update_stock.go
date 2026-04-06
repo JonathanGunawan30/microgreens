@@ -8,7 +8,7 @@ import (
 	"product-service/internal/core/domain/entity"
 	"strconv"
 
-	"github.com/elastic/go-elasticsearch/v9"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/labstack/gommon/log"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
