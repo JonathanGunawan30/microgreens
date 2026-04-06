@@ -4,16 +4,11 @@ import "time"
 
 type ProductStatus string
 
-const (
-	ProductStatusDraft    ProductStatus = "draft"
-	ProductStatusActive   ProductStatus = "active"
-	ProductStatusInactive ProductStatus = "inactive"
-)
-
 type Product struct {
 	ID           int64         `gorm:"primaryKey" json:"id"`
 	CategorySlug string        `gorm:"index" json:"category_slug"`
-	ParentID     *int64        `json:"parent_id"`
+	CategoryName string        `gorm:"->;type:varchar" json:"category_name"`
+	ParentID     *int64        `gorm:"column:parent_id" json:"parent_id"`
 	Name         string        `json:"name"`
 	Image        string        `json:"image"`
 	Description  string        `json:"description"`

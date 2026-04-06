@@ -42,6 +42,24 @@ func (c *cartService) AddToCart(ctx context.Context, userID, productID, quantity
 		return msg.ErrProductNotFound
 	}
 
+	cartItems, err := c.cartRepository.GetCart(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	var currentQtyInCart int64 = 0
+	for _, item := range cartItems {
+		if item.ProductID == productID {
+			currentQtyInCart = item.Quantity
+			break
+		}
+	}
+
+	totalRequestedQty := currentQtyInCart + quantity
+	if totalRequestedQty > getProductByID.Stock {
+		return msg.ErrQuantityExceeds
+	}
+
 	item := entity.CartItem{
 		ProductID: productID,
 		Quantity:  quantity,

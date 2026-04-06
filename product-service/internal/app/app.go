@@ -44,7 +44,7 @@ func RunServer() {
 	cartRepository := repository.NewCartRedisRepository(redisClient)
 
 	categoryService := service.NewCategoryService(categoryRepository)
-	productService := service.NewProductService(productRepository, rabbitMQClient, cfg.RabbitMQ.QueueEsIndexing, categoryRepository)
+	productService := service.NewProductService(productRepository, rabbitMQClient, cfg.ExchangeName.ProductEvent, categoryRepository)
 	imageService := service.NewImageService(supabaseStorage)
 	cartService := service.NewCartService(cartRepository, productRepository)
 
