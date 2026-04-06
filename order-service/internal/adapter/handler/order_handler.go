@@ -52,6 +52,20 @@ func NewOrderHandler(orderService service.OrderServiceInterface, e *echo.Echo, c
 	return order
 }
 
+// GetAllAdminOrders godoc
+// @Summary Get all orders (admin)
+// @Description Get paginated list of all orders for admin
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 10)"
+// @Success 200 {object} response.DefaultResponseWithPagination{data=[]response.OrderAdminList} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/orders [get]
 func (o *orderHandler) GetAllAdminOrders(c echo.Context) error {
 	var (
 		respOrders    []response.OrderAdminList
@@ -71,9 +85,7 @@ func (o *orderHandler) GetAllAdminOrders(c echo.Context) error {
 		categoryQuery.Limit = 10
 	}
 
-	accessToken := utils.GetTokenFromHeader(c)
-
-	orders, count, totalPages, err := o.orderService.GetAllOrders(ctx, categoryQuery, accessToken)
+	orders, count, totalPages, err := o.orderService.GetAllOrders(ctx, categoryQuery)
 	if err != nil {
 		log.Errorf("[OrderHandler - 1] GetAllAdminOrders: %v", err)
 		return c.JSON(http.StatusInternalServerError, response.Error("internal server error"))
@@ -85,18 +97,35 @@ func (o *orderHandler) GetAllAdminOrders(c echo.Context) error {
 			productImage = order.OrderItems[0].ProductImage
 		}
 		respOrders = append(respOrders, response.OrderAdminList{
-			ID:           order.ID,
-			OrderCode:    order.OrderCode,
-			ProductImage: productImage,
-			CustomerName: order.BuyerName,
-			Status:       order.Status,
-			TotalAmount:  int64(order.TotalAmount),
+			ID:            order.ID,
+			OrderCode:     order.OrderCode,
+			ProductImage:  productImage,
+			CustomerName:  order.BuyerName,
+			Status:        order.Status,
+			PaymentMethod: order.PaymentMethod,
+			OrderDate:     order.OrderDate,
+			OrderTime:     order.OrderTime,
+			TotalAmount:   int64(order.TotalAmount),
 		})
 	}
 
 	return c.JSON(http.StatusOK, response.SuccessWithPagination("Success", respOrders, categoryQuery.Page, count, categoryQuery.Limit, totalPages))
 }
 
+// GetOrderByID godoc
+// @Summary Get order by ID (admin)
+// @Description Get order detail by ID for admin
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID"
+// @Success 200 {object} response.DefaultResponse{data=response.OrderAdminDetail} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/orders/{id} [get]
 func (o *orderHandler) GetOrderByID(c echo.Context) error {
 	var (
 		ctx       = c.Request().Context()
@@ -110,9 +139,7 @@ func (o *orderHandler) GetOrderByID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.Error("invalid order id"))
 	}
 
-	accessToken := utils.GetTokenFromHeader(c)
-
-	order, err := o.orderService.GetOrderByID(ctx, orderID, accessToken)
+	order, err := o.orderService.GetOrderByID(ctx, orderID)
 	if err != nil {
 		log.Errorf("[OrderHandler - 2] GetOrderByID: %v", err)
 		if errors.Is(err, message.ErrOrderNotFound) {
@@ -126,10 +153,12 @@ func (o *orderHandler) GetOrderByID(c echo.Context) error {
 	respOrder.ProductImage = order.ProductImage
 	respOrder.Status = order.Status
 	respOrder.TotalAmount = int64(order.TotalAmount)
-	respOrder.OrderDateTime = order.OrderDate
+	respOrder.OrderDate = order.OrderDate
+	respOrder.OrderTime = order.OrderTime
 	respOrder.ShippingFee = int64(order.ShippingFee)
 	respOrder.ShippingType = order.ShippingType
 	respOrder.Remarks = order.Remarks
+	respOrder.PaymentMethod = order.PaymentMethod
 	respOrder.Customer = response.CustomerOrder{
 		CustomerID:      order.BuyerID,
 		CustomerName:    order.BuyerName,
@@ -151,6 +180,20 @@ func (o *orderHandler) GetOrderByID(c echo.Context) error {
 
 }
 
+// GetCustomerOrderByID godoc
+// @Summary Get order by ID (customer)
+// @Description Get order detail by ID for authenticated customer
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID"
+// @Success 200 {object} response.DefaultResponse{data=response.OrderAdminDetail} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /auth/orders/{id} [get]
 func (o *orderHandler) GetCustomerOrderByID(c echo.Context) error {
 	var (
 		ctx       = c.Request().Context()
@@ -164,9 +207,7 @@ func (o *orderHandler) GetCustomerOrderByID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.Error("invalid order id"))
 	}
 
-	accessToken := utils.GetTokenFromHeader(c)
-
-	order, err := o.orderService.GetCustomerOrderByID(ctx, orderID, accessToken)
+	order, err := o.orderService.GetCustomerOrderByID(ctx, orderID)
 	if err != nil {
 		log.Errorf("[OrderHandler - 2] GetCustomerOrderByID: %v", err)
 		if errors.Is(err, message.ErrOrderNotFound) {
@@ -180,7 +221,8 @@ func (o *orderHandler) GetCustomerOrderByID(c echo.Context) error {
 	respOrder.ProductImage = order.ProductImage
 	respOrder.Status = order.Status
 	respOrder.TotalAmount = int64(order.TotalAmount)
-	respOrder.OrderDateTime = order.OrderDate
+	respOrder.OrderDate = order.OrderDate
+	respOrder.OrderTime = order.OrderTime
 	respOrder.ShippingFee = int64(order.ShippingFee)
 	respOrder.ShippingType = order.ShippingType
 	respOrder.PaymentMethod = order.PaymentMethod
@@ -206,6 +248,21 @@ func (o *orderHandler) GetCustomerOrderByID(c echo.Context) error {
 
 }
 
+// CreateOrder godoc
+// @Summary Create order
+// @Description Create a new order for authenticated customer
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body request.CreateOrderRequest true "Create Order Request"
+// @Success 201 {object} response.DefaultResponse{data=map[string]interface{}} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /auth/orders [post]
 func (o *orderHandler) CreateOrder(c echo.Context) error {
 	var (
 		ctx = c.Request().Context()
@@ -225,7 +282,6 @@ func (o *orderHandler) CreateOrder(c echo.Context) error {
 	reqEntity := entity.OrderEntity{
 		BuyerID:      req.BuyerID,
 		OrderDate:    req.OrderDate,
-		TotalAmount:  req.TotalAmount,
 		ShippingType: req.ShippingType,
 		Remarks:      req.Remarks,
 		OrderTime:    req.OrderTime,
@@ -241,11 +297,18 @@ func (o *orderHandler) CreateOrder(c echo.Context) error {
 
 	reqEntity.OrderItems = orderDetails
 
-	accessToken := utils.GetTokenFromHeader(c)
-
-	orderID, err := o.orderService.CreateOrder(ctx, reqEntity, accessToken)
+	orderID, err := o.orderService.CreateOrder(ctx, reqEntity)
 	if err != nil {
 		log.Errorf("[OrderHandler - 3] CreateOrder: %v", err)
+
+		if errors.Is(err, message.ErrUserNotFound) {
+			return c.JSON(http.StatusNotFound, response.Error(err.Error()))
+		}
+
+		if errors.Is(err, message.ErrPhoneIsRequired) || errors.Is(err, message.ErrAddressIsRequired) {
+			return c.JSON(http.StatusUnprocessableEntity, response.Error(err.Error()))
+		}
+
 		return c.JSON(http.StatusInternalServerError, response.Error(err.Error()))
 	}
 
@@ -255,6 +318,23 @@ func (o *orderHandler) CreateOrder(c echo.Context) error {
 
 }
 
+// UpdateStatus godoc
+// @Summary Update order status (admin)
+// @Description Update order status by ID
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID"
+// @Param request body request.OrderUpdateStatusRequest true "Update Status Request"
+// @Success 200 {object} response.DefaultResponse "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 409 {object} response.DefaultResponse "Conflict - Invalid status transition"
+// @Failure 422 {object} response.DefaultResponse "Validation Error"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /admin/orders/{id}/status [patch]
 func (o *orderHandler) UpdateStatus(c echo.Context) error {
 	var (
 		ctx = c.Request().Context()
@@ -278,15 +358,13 @@ func (o *orderHandler) UpdateStatus(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.Error("invalid order id"))
 	}
 
-	accessToken := utils.GetTokenFromHeader(c)
-
 	reqEntity := entity.OrderEntity{
 		Remarks: req.Remarks,
 		Status:  req.Status,
 		ID:      orderID,
 	}
 
-	err = o.orderService.UpdateStatusOrder(ctx, reqEntity, accessToken)
+	err = o.orderService.UpdateStatusOrder(ctx, reqEntity)
 	if err != nil {
 		log.Errorf("[OrderHandler - 4] UpdateStatus: %v", err)
 		if errors.Is(err, message.ErrOrderNotFound) {
@@ -294,7 +372,7 @@ func (o *orderHandler) UpdateStatus(c echo.Context) error {
 		}
 
 		if strings.Contains(err.Error(), "invalid status transition") {
-			return c.JSON(http.StatusBadRequest, response.Error(err.Error()))
+			return c.JSON(http.StatusConflict, response.Error(err.Error()))
 		}
 
 		return c.JSON(http.StatusInternalServerError, response.Error("internal server error"))
@@ -304,6 +382,21 @@ func (o *orderHandler) UpdateStatus(c echo.Context) error {
 
 }
 
+// GetAllCustomerOrders godoc
+// @Summary Get all orders (customer)
+// @Description Get paginated list of orders for authenticated customer
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 10)"
+// @Success 200 {object} response.DefaultResponseWithPagination{data=[]response.OrderCustomerList} "Success"
+// @Failure 400 {object} response.DefaultResponse "Bad Request"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /auth/orders [get]
 func (o *orderHandler) GetAllCustomerOrders(c echo.Context) error {
 	var (
 		ctx         = c.Request().Context()
@@ -331,32 +424,34 @@ func (o *orderHandler) GetAllCustomerOrders(c echo.Context) error {
 		if errors.Is(err, message.ErrOrderNotFound) {
 			return c.JSON(http.StatusNotFound, response.Error("order not found"))
 		}
+		if strings.Contains(err.Error(), "invalid token") || strings.Contains(err.Error(), "token expired") || strings.Contains(err.Error(), "invalid claims") {
+			return c.JSON(http.StatusUnauthorized, response.Error("unauthorized"))
+		}
 		return c.JSON(http.StatusInternalServerError, response.Error("internal server error"))
 	}
 
 	for _, order := range orders {
-		var productImage, unit string
-		var weight, quantity int64
+		var items []response.OrderCustomerListItem
 
-		if len(order.OrderItems) > 0 {
-			firstItem := order.OrderItems[0]
-			productImage = firstItem.ProductImage
-			unit = firstItem.ProductUnit
-			weight = firstItem.ProductWeight
-			quantity = int64(firstItem.Quantity)
+		for _, item := range order.OrderItems {
+			items = append(items, response.OrderCustomerListItem{
+				ProductName:  item.ProductName,
+				ProductImage: item.ProductImage,
+				Weight:       item.ProductWeight,
+				Unit:         item.ProductUnit,
+				Quantity:     int64(item.Quantity),
+			})
 		}
 
 		respOrders = append(respOrders, response.OrderCustomerList{
 			ID:            order.ID,
 			OrderCode:     order.OrderCode,
-			ProductImage:  productImage,
 			Status:        order.Status,
 			PaymentMethod: order.PaymentMethod,
 			TotalAmount:   int64(order.TotalAmount),
-			Weight:        weight,
-			Unit:          unit,
-			Quantity:      quantity,
-			OrderDateTime: order.OrderDate,
+			OrderDate:     order.OrderDate,
+			OrderTime:     order.OrderTime,
+			OrderItems:    items,
 		})
 	}
 
@@ -370,6 +465,19 @@ func (o *orderHandler) GetAllCustomerOrders(c echo.Context) error {
 	))
 }
 
+// GetOrderByOrderCode godoc
+// @Summary Get order by order code (customer)
+// @Description Get order detail by order code for authenticated customer
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param code path string true "Order Code"
+// @Success 200 {object} response.DefaultResponse{data=response.OrderAdminDetail} "Success"
+// @Failure 401 {object} response.DefaultResponse "Unauthorized"
+// @Failure 404 {object} response.DefaultResponse "Not Found"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /auth/orders/{code}/code [get]
 func (o *orderHandler) GetOrderByOrderCode(c echo.Context) error {
 	var (
 		ctx       = c.Request().Context()
@@ -378,9 +486,7 @@ func (o *orderHandler) GetOrderByOrderCode(c echo.Context) error {
 
 	orderCode := c.Param("code")
 
-	accessToken := utils.GetTokenFromHeader(c)
-
-	order, err := o.orderService.GetOrderByOrderCode(ctx, orderCode, accessToken)
+	order, err := o.orderService.GetOrderByOrderCode(ctx, orderCode)
 	if err != nil {
 		log.Errorf("[OrderHandler - 1] GetOrderByOrderCode: %v", err)
 		if errors.Is(err, message.ErrOrderNotFound) {
@@ -394,7 +500,8 @@ func (o *orderHandler) GetOrderByOrderCode(c echo.Context) error {
 	respOrder.ProductImage = order.ProductImage
 	respOrder.Status = order.Status
 	respOrder.TotalAmount = int64(order.TotalAmount)
-	respOrder.OrderDateTime = order.OrderDate
+	respOrder.OrderDate = order.OrderDate
+	respOrder.OrderTime = order.OrderTime
 	respOrder.ShippingFee = int64(order.ShippingFee)
 	respOrder.ShippingType = order.ShippingType
 	respOrder.PaymentMethod = order.PaymentMethod

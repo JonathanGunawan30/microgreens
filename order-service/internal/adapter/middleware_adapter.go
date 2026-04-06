@@ -1,6 +1,9 @@
 package adapter
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"math"
 	"net/http"
 	"order-service/config"
@@ -68,6 +71,11 @@ func (m *middlewareAdapter) CheckToken(secretKey string) echo.MiddlewareFunc {
 			userID := int64(userIDFloat)
 			sessionKey := "session:" + strconv.FormatInt(userID, 10)
 
+			if m.redis == nil {
+				log.Errorf("[CheckToken] Redis client is nil")
+				return c.JSON(http.StatusUnauthorized, response.Error("invalid token"))
+			}
+
 			session, err := m.redis.HGetAll(c.Request().Context(), sessionKey).Result()
 			if err != nil || len(session) == 0 {
 				log.Errorf("[CheckToken-3] Invalid token: %v", err)
@@ -122,6 +130,24 @@ func (m *middlewareAdapter) DistanceCheck() echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			bodyBytes, err := io.ReadAll(c.Request().Body)
+			if err != nil {
+				log.Errorf("[MIddlewareAdapter] DIstanceCheck: Failed to ready body: %v", err)
+				return c.JSON(http.StatusBadRequest, response.Error("invalid request body"))
+			}
+
+			c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+			var payload struct {
+				ShippingType string `json:"shipping_type"`
+			}
+
+			_ = json.Unmarshal(bodyBytes, &payload)
+
+			if strings.EqualFold(payload.ShippingType, "pickup") {
+				return next(c)
+			}
+
 			latParam := c.QueryParam("lat")
 			lngParam := c.QueryParam("lng")
 			if latParam == "" || lngParam == "" {
