@@ -19,6 +19,7 @@ type PsqlDB struct {
 	User      string `json:"user"`
 	Password  string `json:"password"`
 	DBName    string `json:"db_name"`
+	SSLMode   string `json:"ssl_mode"`
 	DBMaxOpen int    `json:"db_max_open"`
 	DBMaxIdle int    `json:"db_max_idle"`
 }
@@ -72,6 +73,7 @@ func NewConfig() *Config {
 			User:      viper.GetString("DATABASE_USER"),
 			Password:  viper.GetString("DATABASE_PASSWORD"),
 			DBName:    viper.GetString("DATABASE_NAME"),
+			SSLMode:   viper.GetString("DATABASE_SSLMODE"),
 			DBMaxOpen: viper.GetInt("DATABASE_MAX_OPEN_CONNECTION"),
 			DBMaxIdle: viper.GetInt("DATABASE_MAX_IDLE_CONNECTION"),
 		},

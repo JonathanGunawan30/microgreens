@@ -13,12 +13,14 @@ type Postgres struct {
 }
 
 func (cfg Config) ConnectionPostgres() (*Postgres, error) {
-	dbConnString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+	dbConnString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.Psql.User,
 		cfg.Psql.Password,
 		cfg.Psql.Host,
 		cfg.Psql.Port,
-		cfg.Psql.DBName)
+		cfg.Psql.DBName,
+		cfg.Psql.SSLMode,
+	)
 
 	dialec := postgres.Open(dbConnString)
 	db, err := gorm.Open(dialec, &gorm.Config{})
