@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"crypto/tls"
 	"time"
 
 	"github.com/labstack/gommon/log"
@@ -13,6 +14,7 @@ func NewRedisClient(cfg *Config) *redis.Client {
 		Addr:         cfg.Redis.Host + ":" + cfg.Redis.Port,
 		Password:     cfg.Redis.Password,
 		DB:           cfg.Redis.DB,
+		TLSConfig:    &tls.Config{},
 		DialTimeout:  time.Second * 5,
 		ReadTimeout:  time.Second * 3,
 		WriteTimeout: time.Second * 3,
