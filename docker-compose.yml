@@ -1,29 +1,8 @@
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: micro_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    networks:
-      - microservices-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: micro_rabbitmq
-    ports:
-      - "5673:5672"
-      - "15673:15672"
+    restart: unless-stopped
     volumes:
       - rbdata:/var/lib/rabbitmq
     networks:
@@ -34,263 +13,147 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:alpine
-    container_name: micro_redis
-    ports:
-      - "6380:6379"
-    networks:
-      - microservices-net
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   elasticsearch:
     image: elasticsearch:8.13.0
     container_name: micro_elasticsearch
+    profiles: ["search"]
+    restart: unless-stopped
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "9201:9200"
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
     volumes:
       - esdata:/usr/share/elasticsearch/data
     networks:
       - microservices-net
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
 
   migrate-user:
     image: migrate/migrate
-    container_name: micro_migrate_user
+    profiles: ["migration"]
     volumes:
       - ./user-service/database/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@micro_postgres:5432/sayur_user_service?sslmode=disable", "up"]
-    depends_on:
-      postgres:
-        condition: service_healthy
+    command: ["-path", "/migrations", "-database", "${USER_DB_URL}", "up"]
     networks:
       - microservices-net
 
   migrate-product:
     image: migrate/migrate
-    container_name: micro_migrate_product
+    profiles: ["migration"]
     volumes:
       - ./product-service/database/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@micro_postgres:5432/sayur_product_service?sslmode=disable", "up"]
-    depends_on:
-      postgres:
-        condition: service_healthy
+    command: ["-path", "/migrations", "-database", "${PRODUCT_DB_URL}", "up"]
     networks:
       - microservices-net
 
   migrate-order:
     image: migrate/migrate
-    container_name: micro_migrate_order
+    profiles: ["migration"]
     volumes:
       - ./order-service/database/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@micro_postgres:5432/sayur_order_service?sslmode=disable", "up"]
-    depends_on:
-      postgres:
-        condition: service_healthy
+    command: ["-path", "/migrations", "-database", "${ORDER_DB_URL}", "up"]
     networks:
       - microservices-net
 
   migrate-payment:
     image: migrate/migrate
-    container_name: micro_migrate_payment
+    profiles: ["migration"]
     volumes:
       - ./payment-service/database/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@micro_postgres:5432/sayur_payment_service?sslmode=disable", "up"]
-    depends_on:
-      postgres:
-        condition: service_healthy
+    command: ["-path", "/migrations", "-database", "${PAYMENT_DB_URL}", "up"]
     networks:
       - microservices-net
 
   migrate-notification:
     image: migrate/migrate
-    container_name: micro_migrate_notification
+    profiles: ["migration"]
     volumes:
       - ./notification-service/database/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@micro_postgres:5432/sayur_notification_service?sslmode=disable", "up"]
-    depends_on:
-      postgres:
-        condition: service_healthy
+    command: ["-path", "/migrations", "-database", "${NOTIFICATION_DB_URL}", "up"]
     networks:
       - microservices-net
 
   user-service:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile
-    container_name: micro_user_api
+    build: ./user-service
+    restart: unless-stopped
     env_file:
       - ./user-service/.env.docker
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      migrate-user:
-        condition: service_completed_successfully
     networks:
       - microservices-net
 
   product-service:
-    build:
-      context: ./product-service
-      dockerfile: Dockerfile
-    container_name: micro_product_api
+    build: ./product-service
+    restart: unless-stopped
     env_file:
       - ./product-service/.env.docker
-    ports:
-      - "8081:8081"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      migrate-product:
-        condition: service_completed_successfully
     networks:
       - microservices-net
 
   order-service:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
-    container_name: micro_order_api
+    build: ./order-service
+    restart: unless-stopped
     env_file:
       - ./order-service/.env.docker
-    ports:
-      - "8082:8082"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      migrate-order:
-        condition: service_completed_successfully
     networks:
       - microservices-net
 
   payment-service:
-    build:
-      context: ./payment-service
-      dockerfile: Dockerfile
-    container_name: micro_payment_api
+    build: ./payment-service
+    restart: unless-stopped
     env_file:
       - ./payment-service/.env.docker
-    ports:
-      - "8083:8083"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      migrate-payment:
-        condition: service_completed_successfully
     networks:
       - microservices-net
 
   notification-service:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    container_name: micro_notification_api
+    build: ./notification-service
+    restart: unless-stopped
     env_file:
       - ./notification-service/.env.docker
-    ports:
-      - "8084:8084"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      migrate-notification:
-        condition: service_completed_successfully
     networks:
       - microservices-net
 
   worker-product:
-    build:
-      context: ./product-service
-      dockerfile: Dockerfile
-    container_name: micro_worker_product
+    build: ./product-service
+    profiles: ["worker"]
+    command: ["./main", "worker"]
     env_file:
       - ./product-service/.env.docker
-    command: ["./main", "worker"]
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      elasticsearch:
         condition: service_healthy
     networks:
       - microservices-net
 
   worker-order-indexing:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
-    container_name: micro_worker_order_indexing
+    build: ./order-service
+    profiles: ["worker"]
+    command: ["./main", "worker-order"]
     env_file:
       - ./order-service/.env.docker
-    command: ["./main", "worker-order"]
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      elasticsearch:
         condition: service_healthy
     networks:
       - microservices-net
 
   worker-order-payment:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
-    container_name: micro_worker_order_payment
+    build: ./order-service
+    profiles: ["worker"]
+    command: ["./main", "worker-payment"]
     env_file:
       - ./order-service/.env.docker
-    command: ["./main", "worker-payment"]
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     networks:
       - microservices-net
 
   worker-order-status:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
-    container_name: micro_worker_order_status
+    build: ./order-service
+    profiles: ["worker"]
+    command: ["./main", "worker-update-status"]
     env_file:
       - ./order-service/.env.docker
-    command: ["./main", "worker-update-status"]
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -298,65 +161,49 @@ services:
       - microservices-net
 
   worker-order-user-snapshot:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
-    container_name: micro_worker_order_user_snapshot
+    build: ./order-service
+    profiles: ["worker"]
+    command: ["./main", "worker-user-snapshot"]
     env_file:
       - ./order-service/.env.docker
-    command: ["./main", "worker-user-snapshot"]
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     networks:
       - microservices-net
 
   worker-order-product-snapshot:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
-    container_name: micro_worker_order_product_snapshot
+    build: ./order-service
+    profiles: ["worker"]
+    command: ["./main", "worker-product-snapshot"]
     env_file:
       - ./order-service/.env.docker
-    command: ["./main", "worker-product-snapshot"]
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     networks:
       - microservices-net
 
   worker-payment-user-snapshot:
-    build:
-      context: ./payment-service
-      dockerfile: Dockerfile
-    container_name: micro_worker_payment_user_snapshot
+    build: ./payment-service
+    profiles: ["worker"]
+    command: ["./main", "worker-user-snapshot"]
     env_file:
       - ./payment-service/.env.docker
-    command: ["./main", "worker-user-snapshot"]
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     networks:
       - microservices-net
 
   worker-payment-order-snapshot:
-    build:
-      context: ./payment-service
-      dockerfile: Dockerfile
-    container_name: micro_worker_payment_order_snapshot
+    build: ./payment-service
+    profiles: ["worker"]
+    command: ["./main", "worker-order-snapshot"]
     env_file:
       - ./payment-service/.env.docker
-    command: ["./main", "worker-order-snapshot"]
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     networks:
       - microservices-net
@@ -364,12 +211,12 @@ services:
   nginx:
     image: nginx:alpine
     container_name: micro_nginx
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/logs:/var/log/nginx
     depends_on:
       - user-service
       - product-service
@@ -380,7 +227,6 @@ services:
       - microservices-net
 
 volumes:
-  pgdata:
   rbdata:
   esdata:
 
