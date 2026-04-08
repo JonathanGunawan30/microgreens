@@ -73,7 +73,7 @@ services:
       - microservices-net
 
   user-service:
-    build: ./user-service
+    image: jonathangunawan30/user-service
     restart: unless-stopped
     env_file:
       - ./user-service/.env.docker
@@ -81,7 +81,7 @@ services:
       - microservices-net
 
   product-service:
-    build: ./product-service
+    image: jonathangunawan30/product-service
     restart: unless-stopped
     env_file:
       - ./product-service/.env.docker
@@ -89,7 +89,7 @@ services:
       - microservices-net
 
   order-service:
-    build: ./order-service
+    image: jonathangunawan30/order-service
     restart: unless-stopped
     env_file:
       - ./order-service/.env.docker
@@ -97,7 +97,7 @@ services:
       - microservices-net
 
   payment-service:
-    build: ./payment-service
+    image: jonathangunawan30/payment-service
     restart: unless-stopped
     env_file:
       - ./payment-service/.env.docker
@@ -105,7 +105,7 @@ services:
       - microservices-net
 
   notification-service:
-    build: ./notification-service
+    image: jonathangunawan30/notification-service
     restart: unless-stopped
     env_file:
       - ./notification-service/.env.docker
@@ -113,7 +113,7 @@ services:
       - microservices-net
 
   worker-product:
-    build: ./product-service
+    image: jonathangunawan30/product-service
     profiles: ["worker"]
     command: ["./main", "worker"]
     env_file:
@@ -125,7 +125,7 @@ services:
       - microservices-net
 
   worker-order-indexing:
-    build: ./order-service
+    image: jonathangunawan30/order-service
     profiles: ["worker"]
     command: ["./main", "worker-order"]
     env_file:
@@ -137,7 +137,7 @@ services:
       - microservices-net
 
   worker-order-payment:
-    build: ./order-service
+    image: jonathangunawan30/order-service
     profiles: ["worker"]
     command: ["./main", "worker-payment"]
     env_file:
@@ -149,7 +149,7 @@ services:
       - microservices-net
 
   worker-order-status:
-    build: ./order-service
+    image: jonathangunawan30/order-service
     profiles: ["worker"]
     command: ["./main", "worker-update-status"]
     env_file:
@@ -161,7 +161,7 @@ services:
       - microservices-net
 
   worker-order-user-snapshot:
-    build: ./order-service
+    image: jonathangunawan30/order-service
     profiles: ["worker"]
     command: ["./main", "worker-user-snapshot"]
     env_file:
@@ -173,7 +173,7 @@ services:
       - microservices-net
 
   worker-order-product-snapshot:
-    build: ./order-service
+    image: jonathangunawan30/order-service
     profiles: ["worker"]
     command: ["./main", "worker-product-snapshot"]
     env_file:
@@ -185,7 +185,7 @@ services:
       - microservices-net
 
   worker-payment-user-snapshot:
-    build: ./payment-service
+    image: jonathangunawan30/payment-service
     profiles: ["worker"]
     command: ["./main", "worker-user-snapshot"]
     env_file:
@@ -197,7 +197,7 @@ services:
       - microservices-net
 
   worker-payment-order-snapshot:
-    build: ./payment-service
+    image: jonathangunawan30/payment-service
     profiles: ["worker"]
     command: ["./main", "worker-order-snapshot"]
     env_file:
