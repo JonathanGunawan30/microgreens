@@ -20,6 +20,7 @@ import (
 type ProductRepositoryInterface interface {
 	GetAllProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)
 	SearchProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)
+	SearchProductsFallback(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)
 	GetProductByID(ctx context.Context, productID int64) (*entity.ProductEntity, error)
 	CreateProduct(ctx context.Context, product entity.ProductEntity) (*entity.ProductEntity, error)
 	UpdateProduct(ctx context.Context, product entity.ProductEntity) (*entity.ProductEntity, error)
@@ -147,6 +148,10 @@ func (p *productRepository) GetAllProducts(ctx context.Context, query entity.Que
 }
 
 func (p *productRepository) SearchProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error) {
+	if p.es == nil {
+		return nil, 0, 0, errors.New("elasticsearch not available")
+	}
+
 	boolQuery := &types.BoolQuery{}
 
 	if query.Search != "" {
@@ -280,6 +285,99 @@ func (p *productRepository) SearchProducts(ctx context.Context, query entity.Que
 	totalPages := (totalHits + int64(limit) - 1) / int64(limit)
 
 	return products, totalHits, totalPages, nil
+}
+
+func (p *productRepository) SearchProductsFallback(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error) {
+	var modelProduct []model.Product
+	var count int64
+
+	q := p.db.WithContext(ctx).Table("products")
+
+	q = q.Where("products.status = ?", "active").
+		Where("products.parent_id IS NULL")
+
+	if query.CategorySlug != "" {
+		q = q.Where("products.category_slug = ?", query.CategorySlug)
+	}
+
+	if query.StartPrice > 0 {
+		q = q.Where("products.sale_price >= ?", query.StartPrice)
+	}
+	if query.EndPrice > 0 {
+		q = q.Where("products.sale_price <= ?", query.EndPrice)
+	}
+
+	if query.Search != "" {
+		search := "%" + query.Search + "%"
+		whereSQL := `(products.name ILIKE ? OR products.category_slug ILIKE ? OR products.description ILIKE ?)`
+		q = q.Where(whereSQL, search, search, search)
+	}
+
+	if err := q.Count(&count).Error; err != nil {
+		log.Errorf("[ProductRepository] SearchProductsFallback Count: %v", err)
+		return nil, 0, 0, err
+	}
+
+	limit := int(query.Limit)
+	if limit <= 0 {
+		limit = 10
+	}
+	page := int(query.Page)
+	if page <= 0 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+	total := (count + int64(limit) - 1) / int64(limit)
+
+	orderBy := "created_at"
+	if query.OrderBy != "" {
+		allowedSort := map[string]string{
+			"name":  "name",
+			"price": "sale_price",
+			"stock": "stock",
+			"id":    "id",
+		}
+		if val, ok := allowedSort[query.OrderBy]; ok {
+			orderBy = val
+		}
+	}
+
+	orderType := "DESC"
+	if strings.ToLower(query.OrderType) == "asc" {
+		orderType = "ASC"
+	}
+	orderClause := fmt.Sprintf("products.%s %s", orderBy, orderType)
+
+	q = q.Select("products.*, categories.name as category_name").
+		Joins("LEFT JOIN categories ON categories.slug = products.category_slug")
+
+	if err := q.Order(orderClause).Limit(limit).Offset(offset).Find(&modelProduct).Error; err != nil {
+		log.Errorf("[ProductRepository] SearchProductsFallback Find: %v", err)
+		return nil, 0, 0, err
+	}
+
+	result := make([]entity.ProductEntity, 0, len(modelProduct))
+	for _, product := range modelProduct {
+		result = append(result, entity.ProductEntity{
+			ID:           product.ID,
+			CategorySlug: product.CategorySlug,
+			CategoryName: product.CategoryName,
+			ParentID:     product.ParentID,
+			Name:         product.Name,
+			Image:        product.Image,
+			Description:  product.Description,
+			RegulerPrice: product.RegulerPrice,
+			SalePrice:    product.SalePrice,
+			Unit:         product.Unit,
+			Weight:       product.Weight,
+			Stock:        product.Stock,
+			Variant:      product.Variant,
+			Status:       entity.ProductStatus(product.Status),
+			CreatedAt:    product.CreatedAt,
+		})
+	}
+
+	return result, count, total, nil
 }
 
 func (p *productRepository) GetProductByID(ctx context.Context, productID int64) (*entity.ProductEntity, error) {

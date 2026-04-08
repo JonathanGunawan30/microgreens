@@ -13,7 +13,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func StartStockUpdateConsumer(conn *amqp.Connection, repo repository.ProductRepositoryInterface, queueName string, es *elasticsearch.TypedClient) {
+func StartStockUpdateConsumer(conn *amqp.Connection, repo repository.ProductRepositoryInterface, queueName string, es *elasticsearch.TypedClient, stop <-chan struct{}) {
 	if conn == nil {
 		return
 	}
@@ -40,25 +40,26 @@ func StartStockUpdateConsumer(conn *amqp.Connection, repo repository.ProductRepo
 
 	log.Infof("Consumer Stock Update started on queue: %s", queueName)
 
-	forever := make(chan bool)
-
-	go func() {
-		for d := range msgs {
+	for {
+		select {
+		case d, ok := <-msgs:
+			if !ok {
+				log.Warn("StockUpdateConsumer: channel closed")
+				return
+			}
 			log.Infof("[StockConsumer] Received payload: %s", d.Body)
-
 			err := processStockUpdate(d.Body, repo, es)
-
 			if err != nil {
 				log.Errorf("[StockConsumer] Failed to process: %v", err)
-
 				d.Nack(false, false)
 			} else {
 				d.Ack(false)
 			}
+		case <-stop:
+			log.Info("StockUpdateConsumer stopping, handing off to ES-aware consumer...")
+			return
 		}
-	}()
-
-	<-forever
+	}
 }
 
 func processStockUpdate(body []byte, repo repository.ProductRepositoryInterface, es *elasticsearch.TypedClient) error {
@@ -84,12 +85,16 @@ func processStockUpdate(body []byte, repo repository.ProductRepositoryInterface,
 			return fmt.Errorf("failed to fetch parent product: %v", err)
 		}
 
-		if err := syncToES(ctx, es, parentProduct); err != nil {
-			log.Errorf("failed to sync parent to elasticsearch: %v", err)
-		}
-
 		log.Infof("Stock updated! Child ID %d, Parent ID %d remaining stock: %d",
 			childProduct.ID, parentProduct.ID, parentProduct.Stock)
+
+		if es != nil {
+			if err := syncToES(ctx, es, parentProduct); err != nil {
+				log.Warnf("Failed to sync parent to ES (non-fatal): %v", err)
+			}
+		} else {
+			log.Warn("Elasticsearch not available, skipping ES sync for stock update")
+		}
 	}
 
 	return nil
