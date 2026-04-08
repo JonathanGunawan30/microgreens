@@ -19,6 +19,10 @@ func (cfg *Config) NewElasticsearchClient() (*elasticsearch.TypedClient, error) 
 			},
 		},
 	}
+	configElastic.Header = http.Header{
+		"Accept": []string{"application/vnd.elasticsearch+json;compatible-with=7"},
+	}
+	
 	es, err := elasticsearch.NewTypedClient(configElastic)
 	if err != nil {
 		return nil, fmt.Errorf("error creating elastic client: %v", err)
