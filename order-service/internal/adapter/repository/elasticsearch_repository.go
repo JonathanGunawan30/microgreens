@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"order-service/internal/core/domain/entity"
@@ -29,6 +30,10 @@ func NewElasticRepository(es *elasticsearch.TypedClient) ElasticRepositoryInterf
 }
 
 func (e *elasticRepository) SearchOrderElastic(ctx context.Context, q entity.QueryStringEntity) ([]entity.OrderEntity, int64, int64, error) {
+	if e.esClient == nil {
+		return nil, 0, 0, errors.New("elasticsearch not available")
+	}
+
 	fromInt := int((q.Page - 1) * q.Limit)
 	limitInt := int(q.Limit)
 

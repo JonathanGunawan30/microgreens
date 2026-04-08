@@ -48,7 +48,14 @@ func (p *productService) SearchProducts(ctx context.Context, query entity.QueryS
 	if query.EndPrice > 0 && query.StartPrice > query.EndPrice {
 		query.StartPrice, query.EndPrice = query.EndPrice, query.StartPrice
 	}
-	return p.repo.SearchProducts(ctx, query)
+	products, count, totalPages, err := p.repo.SearchProducts(ctx, query)
+
+	if err != nil {
+		log.Warnf("[ProductService] Failed to search products with Elasticsearch (Fallback to relational database)")
+		return p.repo.SearchProductsFallback(ctx, query)
+	}
+
+	return products, count, totalPages, nil
 }
 
 func (p *productService) GetProductByID(ctx context.Context, productID int64) (*entity.ProductEntity, error) {

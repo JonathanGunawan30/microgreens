@@ -4,17 +4,18 @@ import (
 	"order-service/config"
 	"order-service/internal/adapter/message"
 	"order-service/internal/adapter/repository"
+	"order-service/utils/helper"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/labstack/gommon/log"
 	"github.com/spf13/cobra"
 )
 
 var workerOrderCmd = &cobra.Command{
-	Use:   "worker-order",
-	Short: "Running background worker for Order Indexing",
+	Use: "worker-order",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Starting Worker Order Service...")
 		cfg := config.NewConfig()
@@ -25,11 +26,6 @@ var workerOrderCmd = &cobra.Command{
 		}
 		defer rabbitMQClient.Close()
 
-		esClient, err := cfg.NewElasticsearchClient()
-		if err != nil {
-			log.Fatalf("Failed to connect to Elasticsearch: %v", err)
-		}
-
 		queueOrderName := cfg.PublisherName.OrderPublish
 		eventOrderName := cfg.ExchangeName.OrderEvent
 
@@ -37,9 +33,9 @@ var workerOrderCmd = &cobra.Command{
 			log.Fatalf("Queue/Publisher name are empty in .env!")
 		}
 
-		log.Infof("Dependencies ready. Spawning Order consumers...")
-
-		go message.StartOrderConsumer(rabbitMQClient, queueOrderName, eventOrderName, esClient)
+		go helper.RetryElasticsearch(cfg, func(esClient *elasticsearch.TypedClient) {
+			go message.StartOrderConsumer(rabbitMQClient, queueOrderName, eventOrderName, esClient)
+		})
 
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
@@ -49,8 +45,7 @@ var workerOrderCmd = &cobra.Command{
 }
 
 var workerPaymentCmd = &cobra.Command{
-	Use:   "worker-payment",
-	Short: "Running background worker for Update Payment Method",
+	Use: "worker-payment",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Starting Worker Payment Service...")
 		cfg := config.NewConfig()
@@ -61,11 +56,6 @@ var workerPaymentCmd = &cobra.Command{
 		}
 		defer rabbitMQClient.Close()
 
-		esClient, err := cfg.NewElasticsearchClient()
-		if err != nil {
-			log.Fatalf("Failed to connect to Elasticsearch: %v", err)
-		}
-
 		db, err := cfg.ConnectionPostgres()
 		if err != nil {
 			log.Fatalf("Failed to connect to database postgres: %v", err)
@@ -75,17 +65,17 @@ var workerPaymentCmd = &cobra.Command{
 
 		queueUpdatePaymentMethodDB := cfg.QueueName.UpdatePaymentMethodDB
 		queueUpdatePaymentMethodES := cfg.QueueName.UpdatePaymentMethodES
-
 		exchangeUpdatePaymentMethod := cfg.ExchangeName.PaymentEvent
 
 		if queueUpdatePaymentMethodDB == "" || queueUpdatePaymentMethodES == "" || exchangeUpdatePaymentMethod == "" {
 			log.Fatalf("Queue/Exchange name are empty in .env!")
 		}
 
-		log.Infof("Dependencies ready. Spawning payment consumers...")
-
-		go message.ConsumeUpdatePaymentMethodES(rabbitMQClient, queueUpdatePaymentMethodES, exchangeUpdatePaymentMethod, esClient)
 		go message.ConsumeUpdatePaymentMethodDB(rabbitMQClient, queueUpdatePaymentMethodDB, exchangeUpdatePaymentMethod, orderRepository)
+
+		go helper.RetryElasticsearch(cfg, func(esClient *elasticsearch.TypedClient) {
+			go message.ConsumeUpdatePaymentMethodES(rabbitMQClient, queueUpdatePaymentMethodES, exchangeUpdatePaymentMethod, esClient)
+		})
 
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
@@ -95,8 +85,7 @@ var workerPaymentCmd = &cobra.Command{
 }
 
 var workerStatusCmd = &cobra.Command{
-	Use:   "worker-update-status",
-	Short: "Running background worker for Update Status",
+	Use: "worker-update-status",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Starting Worker Update Status Service...")
 		cfg := config.NewConfig()
@@ -107,20 +96,15 @@ var workerStatusCmd = &cobra.Command{
 		}
 		defer rabbitMQClient.Close()
 
-		esClient, err := cfg.NewElasticsearchClient()
-		if err != nil {
-			log.Fatalf("Failed to connect to Elasticsearch: %v", err)
-		}
-
 		queueUpdateStatus := cfg.PublisherName.PublisherUpdateStatus
 
 		if queueUpdateStatus == "" {
 			log.Fatalf("Queue/Publisher name are empty in .env!")
 		}
 
-		log.Infof("Dependencies ready. Spawning update status consumers...")
-
-		go message.ConsumeUpdateStatus(rabbitMQClient, queueUpdateStatus, esClient)
+		go helper.RetryElasticsearch(cfg, func(esClient *elasticsearch.TypedClient) {
+			go message.ConsumeUpdateStatus(rabbitMQClient, queueUpdateStatus, esClient)
+		})
 
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)

@@ -33,7 +33,8 @@ func RunServer() {
 	defer rabbitMQClient.Close()
 	elasticsearchClient, err := cfg.NewElasticsearchClient()
 	if err != nil {
-		log.Fatalf("[RunServer - 3] Failed to connect to Elasticsearch: %v", err)
+		log.Warnf("[RunServer - 3] Failed to connect to Elasticsearch: %v", err)
+		elasticsearchClient = nil
 	}
 
 	orderRepository := repository.NewOrderRepository(db.DB)
