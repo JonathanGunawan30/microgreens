@@ -39,7 +39,7 @@ func (o *ordersSnapshotRepository) Upsert(ctx context.Context, order entity.Orde
 
 func (o *ordersSnapshotRepository) GetOrderByID(ctx context.Context, orderID int64) (*entity.OrdersSnapshotEntity, error) {
 	var m model.OrdersSnapshot
-	if err := o.db.WithContext(ctx).Where("order_id = ?", orderID).Model(&m).Error; err != nil {
+	if err := o.db.WithContext(ctx).Where("order_id = ?", orderID).First(&m).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, message.ErrOrderNotFound
 		}
