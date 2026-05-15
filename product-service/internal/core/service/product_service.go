@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
+	"product-service/config"
 	"product-service/internal/adapter/message"
 	"product-service/internal/adapter/repository"
 	"product-service/internal/core/domain/entity"
 	msgs "product-service/utils/message"
 
 	"github.com/labstack/gommon/log"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type ProductServiceInterface interface {
@@ -24,11 +24,11 @@ type ProductServiceInterface interface {
 type productService struct {
 	repo         repository.ProductRepositoryInterface
 	repoCategory repository.CategoryRepositoryInterface
-	rabbitmq     *amqp.Connection
+	rabbitmq     *config.RabbitMQClient
 	exchangeName string
 }
 
-func NewProductService(repo repository.ProductRepositoryInterface, rabbitmq *amqp.Connection, exchangeName string, repoCategory repository.CategoryRepositoryInterface) ProductServiceInterface {
+func NewProductService(repo repository.ProductRepositoryInterface, rabbitmq *config.RabbitMQClient, exchangeName string, repoCategory repository.CategoryRepositoryInterface) ProductServiceInterface {
 	return &productService{
 		repo:         repo,
 		rabbitmq:     rabbitmq,

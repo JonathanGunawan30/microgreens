@@ -16,7 +16,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/gommon/log"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -43,11 +42,11 @@ type userService struct {
 	cfg        *config.Config
 	jwtService JwtServiceInterface
 	redis      *redis.Client
-	rabbitmq   *amqp.Connection
+	rabbitmq   *config.RabbitMQClient
 	repoToken  repository.VerificationTokenRepositoryInterface
 }
 
-func NewUserService(repo repository.UserRepositoryInterface, cfg *config.Config, jwtService JwtServiceInterface, redis *redis.Client, rabbitmq *amqp.Connection, repositoryInterface repository.VerificationTokenRepositoryInterface) UserServiceInterface {
+func NewUserService(repo repository.UserRepositoryInterface, cfg *config.Config, jwtService JwtServiceInterface, redis *redis.Client, rabbitmq *config.RabbitMQClient, repositoryInterface repository.VerificationTokenRepositoryInterface) UserServiceInterface {
 	return &userService{
 		repo:       repo,
 		cfg:        cfg,

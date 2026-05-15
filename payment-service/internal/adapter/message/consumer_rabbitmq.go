@@ -3,19 +3,19 @@ package message
 import (
 	"context"
 	"encoding/json"
+	"payment-service/config"
 	"payment-service/internal/adapter/repository"
 	"payment-service/internal/core/domain/entity"
 
 	"github.com/labstack/gommon/log"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func ConsumeUserSnapshot(conn *amqp.Connection, queueName, exchangeName string, repo repository.UserSnapshotRepositoryInterface) {
-	if conn == nil {
-		log.Errorf("[ConsumeUserSnapshot] RabbitMQ connection is nil, skipping consumer")
+func ConsumeUserSnapshot(client *config.RabbitMQClient, queueName, exchangeName string, repo repository.UserSnapshotRepositoryInterface) {
+	if client == nil {
+		log.Errorf("[ConsumeUserSnapshot] RabbitMQ client is nil, skipping consumer")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
@@ -75,12 +75,12 @@ func ConsumeUserSnapshot(conn *amqp.Connection, queueName, exchangeName string, 
 	<-forever
 }
 
-func ConsumeOrderSnapshot(conn *amqp.Connection, queueName, exchangeName string, repo repository.OrderSnapshotRepositoryInterface) {
-	if conn == nil {
-		log.Errorf("[ConsumeOrderSnapshot] RabbitMQ connection is nil, skipping consumer")
+func ConsumeOrderSnapshot(client *config.RabbitMQClient, queueName, exchangeName string, repo repository.OrderSnapshotRepositoryInterface) {
+	if client == nil {
+		log.Errorf("[ConsumeOrderSnapshot] RabbitMQ client is nil, skipping consumer")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}

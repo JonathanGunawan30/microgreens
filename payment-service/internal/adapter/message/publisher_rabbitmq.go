@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"payment-service/config"
 	"payment-service/internal/core/domain/entity"
 	"time"
 
@@ -11,12 +12,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func PublishUpdatePaymentMethod(conn *amqp.Connection, payment entity.PaymentEntity, exchangeName string) error {
-	if conn == nil {
-		log.Errorf("[PublishUpdatePaymentMethod] RabbitMQ connection is nil, skipping publish")
+func PublishUpdatePaymentMethod(client *config.RabbitMQClient, payment entity.PaymentEntity, exchangeName string) error {
+	if client == nil {
+		log.Errorf("[PublishUpdatePaymentMethod] RabbitMQ client is nil, skipping publish")
 		return nil
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
 	}

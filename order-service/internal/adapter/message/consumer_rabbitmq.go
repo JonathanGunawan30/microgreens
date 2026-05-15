@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"order-service/config"
 	"order-service/internal/adapter/handler/response"
 	"order-service/internal/adapter/repository"
 	"order-service/internal/core/domain/entity"
@@ -12,16 +13,14 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
 	"github.com/labstack/gommon/log"
-
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func StartOrderConsumer(conn *amqp.Connection, queueName, eventName string, es *elasticsearch.TypedClient) {
-	if conn == nil {
-		log.Errorf("RabbitMQ connection is nil")
+func StartOrderConsumer(client *config.RabbitMQClient, queueName, eventName string, es *elasticsearch.TypedClient) {
+	if client == nil {
+		log.Errorf("RabbitMQ client is nil")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
@@ -87,12 +86,12 @@ func StartOrderConsumer(conn *amqp.Connection, queueName, eventName string, es *
 	<-forever
 }
 
-func ConsumeUpdatePaymentMethodES(conn *amqp.Connection, queueName, exchangeName string, es *elasticsearch.TypedClient) {
-	if conn == nil {
-		log.Errorf("RabbitMQ connection is nil")
+func ConsumeUpdatePaymentMethodES(client *config.RabbitMQClient, queueName, exchangeName string, es *elasticsearch.TypedClient) {
+	if client == nil {
+		log.Errorf("RabbitMQ client is nil")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
@@ -166,12 +165,12 @@ func ConsumeUpdatePaymentMethodES(conn *amqp.Connection, queueName, exchangeName
 	<-forever
 }
 
-func ConsumeUpdatePaymentMethodDB(conn *amqp.Connection, queueName, exchangeName string, orderRepo repository.OrderRepositoryInterface) {
-	if conn == nil {
-		log.Errorf("RabbitMQ connection is nil")
+func ConsumeUpdatePaymentMethodDB(client *config.RabbitMQClient, queueName, exchangeName string, orderRepo repository.OrderRepositoryInterface) {
+	if client == nil {
+		log.Errorf("RabbitMQ client is nil")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
@@ -232,12 +231,12 @@ func ConsumeUpdatePaymentMethodDB(conn *amqp.Connection, queueName, exchangeName
 	<-forever
 }
 
-func ConsumeUpdateStatus(conn *amqp.Connection, queueName string, es *elasticsearch.TypedClient) {
-	if conn == nil {
-		log.Errorf("RabbitMQ connection is nil")
+func ConsumeUpdateStatus(client *config.RabbitMQClient, queueName string, es *elasticsearch.TypedClient) {
+	if client == nil {
+		log.Errorf("RabbitMQ connectcliention is nil")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
@@ -301,12 +300,12 @@ func ConsumeUpdateStatus(conn *amqp.Connection, queueName string, es *elasticsea
 	<-forever
 }
 
-func ConsumeUserSnapshot(conn *amqp.Connection, queueName, exchangeName string, userSnapshotRepo repository.UserSnapshotRepositoryInterface) {
-	if conn == nil {
-		log.Errorf("RabbitMQ connection is nil")
+func ConsumeUserSnapshot(client *config.RabbitMQClient, queueName, exchangeName string, userSnapshotRepo repository.UserSnapshotRepositoryInterface) {
+	if client == nil {
+		log.Errorf("RabbitMQ client is nil")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
@@ -365,12 +364,12 @@ func ConsumeUserSnapshot(conn *amqp.Connection, queueName, exchangeName string, 
 	<-forever
 }
 
-func ConsumeProductSnapshot(conn *amqp.Connection, queueName, exchangeName string, repo repository.ProductSnapshotRepositoryInterface) {
-	if conn == nil {
-		log.Errorf("RabbitMQ connection is nil")
+func ConsumeProductSnapshot(client *config.RabbitMQClient, queueName, exchangeName string, repo repository.ProductSnapshotRepositoryInterface) {
+	if client == nil {
+		log.Errorf("RabbitMQ client is nil")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open channel: %v", err)
 	}

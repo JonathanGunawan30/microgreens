@@ -13,7 +13,6 @@ import (
 	msg "order-service/utils/message"
 
 	"github.com/labstack/gommon/log"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type OrderServiceInterface interface {
@@ -31,11 +30,11 @@ type orderService struct {
 	userSnapshotRepo repository.UserSnapshotRepositoryInterface
 	prodSnapshotRepo repository.ProductSnapshotRepositoryInterface
 	cfg              *config.Config
-	rabbitmq         *amqp.Connection
+	rabbitmq         *config.RabbitMQClient
 	elasticRepo      repository.ElasticRepositoryInterface
 }
 
-func NewOrderService(repo repository.OrderRepositoryInterface, userSnapshotRepo repository.UserSnapshotRepositoryInterface, prodSnapshotRepository repository.ProductSnapshotRepositoryInterface, cfg *config.Config, rabbitmq *amqp.Connection, elasticRepo repository.ElasticRepositoryInterface) OrderServiceInterface {
+func NewOrderService(repo repository.OrderRepositoryInterface, userSnapshotRepo repository.UserSnapshotRepositoryInterface, prodSnapshotRepository repository.ProductSnapshotRepositoryInterface, cfg *config.Config, rabbitmq *config.RabbitMQClient, elasticRepo repository.ElasticRepositoryInterface) OrderServiceInterface {
 	return &orderService{
 		repo:             repo,
 		userSnapshotRepo: userSnapshotRepo,

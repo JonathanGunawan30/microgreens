@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"order-service/config"
 	"order-service/internal/core/domain/entity"
 	"order-service/utils/constant"
 	"time"
@@ -12,12 +13,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func PublishUpdateStock(conn *amqp.Connection, productID, quantity int64, queueName string) {
-	if conn == nil {
-		log.Errorf("RabbitMQ connection is nil")
+func PublishUpdateStock(client *config.RabbitMQClient, productID, quantity int64, queueName string) {
+	if client == nil {
+		log.Errorf("RabbitMQ client is nil")
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Errorf("failed to open a channel: %v", err)
 		return
@@ -59,11 +60,11 @@ func PublishUpdateStock(conn *amqp.Connection, productID, quantity int64, queueN
 	log.Infof("Successfully publish order: %d", order)
 }
 
-func PublishOrderEvent(conn *amqp.Connection, order entity.OrderEntity, eventName string) error {
-	if conn == nil {
-		return fmt.Errorf("rabbitmq connection is nil")
+func PublishOrderEvent(client *config.RabbitMQClient, order entity.OrderEntity, eventName string) error {
+	if client == nil {
+		return fmt.Errorf("rabbitmq client is nil")
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
 	}
@@ -97,11 +98,11 @@ func PublishOrderEvent(conn *amqp.Connection, order entity.OrderEntity, eventNam
 	return nil
 }
 
-func PublishEmailUpdateStatus(conn *amqp.Connection, email, message, queueName string, userID int64) error {
-	if conn == nil {
-		return fmt.Errorf("rabbitmq connection is nil")
+func PublishEmailUpdateStatus(client *config.RabbitMQClient, email, message, queueName string, userID int64) error {
+	if client == nil {
+		return fmt.Errorf("rabbitmq client is nil")
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
 	}
@@ -149,11 +150,11 @@ func PublishEmailUpdateStatus(conn *amqp.Connection, email, message, queueName s
 	return nil
 }
 
-func PublishUpdateStatus(conn *amqp.Connection, orderID int64, status string, queueName string) error {
-	if conn == nil {
-		return fmt.Errorf("rabbitmq connection is nil")
+func PublishUpdateStatus(client *config.RabbitMQClient, orderID int64, status string, queueName string) error {
+	if client == nil {
+		return fmt.Errorf("rabbitmq client is nil")
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
 	}
@@ -193,11 +194,11 @@ func PublishUpdateStatus(conn *amqp.Connection, orderID int64, status string, qu
 	return nil
 }
 
-func PublishSendPushNotifUpdateStatus(conn *amqp.Connection, message, queueName string, userID int64) error {
-	if conn == nil {
-		return fmt.Errorf("rabbitmq connection is nil")
+func PublishSendPushNotifUpdateStatus(client *config.RabbitMQClient, message, queueName string, userID int64) error {
+	if client == nil {
+		return fmt.Errorf("rabbitmq client is nil")
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %v", err)
 	}

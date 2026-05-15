@@ -4,20 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"product-service/config"
 	"product-service/internal/adapter/repository"
 	"product-service/internal/core/domain/entity"
 	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/labstack/gommon/log"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func StartStockUpdateConsumer(conn *amqp.Connection, repo repository.ProductRepositoryInterface, queueName string, es *elasticsearch.TypedClient, stop <-chan struct{}) {
-	if conn == nil {
+func StartStockUpdateConsumer(client *config.RabbitMQClient, repo repository.ProductRepositoryInterface, queueName string, es *elasticsearch.TypedClient, stop <-chan struct{}) {
+	if client == nil {
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}

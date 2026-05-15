@@ -4,19 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"product-service/config"
 	"product-service/internal/core/domain/entity"
 
 	"github.com/labstack/gommon/log"
 
 	"github.com/elastic/go-elasticsearch/v8"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func StartIndexingConsumer(conn *amqp.Connection, esClient *elasticsearch.TypedClient, queueName, exchangeName string) {
-	if conn == nil {
+func StartIndexingConsumer(client *config.RabbitMQClient, esClient *elasticsearch.TypedClient, queueName, exchangeName string) {
+	if client == nil {
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}

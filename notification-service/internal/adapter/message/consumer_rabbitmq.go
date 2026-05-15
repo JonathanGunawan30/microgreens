@@ -4,20 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"notification-service/config"
 	"notification-service/internal/core/domain/entity"
 	"notification-service/internal/core/service"
 	"notification-service/utils/constant"
 
 	"github.com/labstack/gommon/log"
-
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func ConsumeMessage(conn *amqp.Connection, queueName string, notifService *service.NotificationService) {
-	if conn == nil {
+func ConsumeMessage(client *config.RabbitMQClient, queueName string, notifService *service.NotificationService) {
+	if client == nil {
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
@@ -66,11 +65,11 @@ func ConsumeMessage(conn *amqp.Connection, queueName string, notifService *servi
 	<-forever
 }
 
-func OrderPushNotificationConsumer(conn *amqp.Connection, queueName, exchangeName string, notifService *service.NotificationService) {
-	if conn == nil {
+func OrderPushNotificationConsumer(client *config.RabbitMQClient, queueName, exchangeName string, notifService *service.NotificationService) {
+	if client == nil {
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}
@@ -139,11 +138,11 @@ func OrderPushNotificationConsumer(conn *amqp.Connection, queueName, exchangeNam
 	<-forever
 }
 
-func OrderEmailNotificationConsumer(conn *amqp.Connection, queueName, exchangeName string, notifService *service.NotificationService) {
-	if conn == nil {
+func OrderEmailNotificationConsumer(client *config.RabbitMQClient, queueName, exchangeName string, notifService *service.NotificationService) {
+	if client == nil {
 		return
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Fatalf("Failed to open a channel: %v", err)
 	}

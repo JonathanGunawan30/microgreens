@@ -2,17 +2,18 @@ package message
 
 import (
 	"encoding/json"
+	"product-service/config"
 	"product-service/internal/core/domain/entity"
 
 	"github.com/labstack/gommon/log"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func PublishProductEvent(conn *amqp.Connection, product entity.ProductEntity, exchangeName string, action entity.ActionType) error {
-	if conn == nil {
+func PublishProductEvent(client *config.RabbitMQClient, product entity.ProductEntity, exchangeName string, action entity.ActionType) error {
+	if client == nil {
 		return nil
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Errorf("Failed to open a channel: %v", err)
 		return err

@@ -2,6 +2,7 @@ package message
 
 import (
 	"encoding/json"
+	"user-service/config"
 	"user-service/internal/core/domain/entity"
 	"user-service/utils"
 
@@ -9,12 +10,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func PublishMessage(conn *amqp.Connection, userID int64, email, message, queueName, subject string) error {
-	if conn == nil {
-		log.Errorf("[PublishMessage-0] Connection is nil")
+func PublishMessage(client *config.RabbitMQClient, userID int64, email, message, queueName, subject string) error {
+	if client == nil {
+		log.Errorf("[PublishMessage-0] client is nil")
 		return nil
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Errorf("[PublishMessage-1] Failed to open channel: %v", err)
 		return err
@@ -54,12 +55,12 @@ func PublishMessage(conn *amqp.Connection, userID int64, email, message, queueNa
 		})
 }
 
-func PublishUserEvent(conn *amqp.Connection, user entity.UserEntity, exchangeName string) error {
-	if conn == nil {
-		log.Errorf("[PublishUserEvent-0] Connection is nil")
+func PublishUserEvent(client *config.RabbitMQClient, user entity.UserEntity, exchangeName string) error {
+	if client == nil {
+		log.Errorf("[PublishUserEvent-0] client is nil")
 		return nil
 	}
-	ch, err := conn.Channel()
+	ch, err := client.GetConn().Channel()
 	if err != nil {
 		log.Errorf("[PublishUserEvent-1] Failed to open channel: %v", err)
 		return err

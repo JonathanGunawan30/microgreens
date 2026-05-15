@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/labstack/gommon/log"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type PaymentServiceInterface interface {
@@ -29,17 +28,17 @@ type paymentService struct {
 	ordersSnapshotRepo repository.OrderSnapshotRepositoryInterface
 	usersSnapshotRepo  repository.UserSnapshotRepositoryInterface
 	midtrans           adapter.MidtransClientInterface
-	rabbitmq           *amqp.Connection
+	rabbitmq           *config.RabbitMQClient
 	cfg                *config.Config
 }
 
-func NewPaymentService(repo repository.PaymentRepositoryInterface, ordersSnapshotRepo repository.OrderSnapshotRepositoryInterface, usersSnapshotRepo repository.UserSnapshotRepositoryInterface, midtrans adapter.MidtransClientInterface, rabbitmq *amqp.Connection, cfg *config.Config) PaymentServiceInterface {
+func NewPaymentService(repo repository.PaymentRepositoryInterface, ordersSnapshotRepo repository.OrderSnapshotRepositoryInterface, usersSnapshotRepo repository.UserSnapshotRepositoryInterface, midtrans adapter.MidtransClientInterface, client *config.RabbitMQClient, cfg *config.Config) PaymentServiceInterface {
 	return &paymentService{
 		repo:               repo,
 		ordersSnapshotRepo: ordersSnapshotRepo,
 		usersSnapshotRepo:  usersSnapshotRepo,
 		midtrans:           midtrans,
-		rabbitmq:           rabbitmq,
+		rabbitmq:           client,
 		cfg:                cfg,
 	}
 }
