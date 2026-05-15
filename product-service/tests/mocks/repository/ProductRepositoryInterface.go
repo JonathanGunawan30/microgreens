@@ -258,6 +258,50 @@ func (_m *ProductRepositoryInterface) SearchProducts(ctx context.Context, query 
 	return r0, r1, r2, r3
 }
 
+// SearchProductsFallback provides a mock function with given fields: ctx, query
+func (_m *ProductRepositoryInterface) SearchProductsFallback(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error) {
+	ret := _m.Called(ctx, query)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SearchProductsFallback")
+	}
+
+	var r0 []entity.ProductEntity
+	var r1 int64
+	var r2 int64
+	var r3 error
+	if rf, ok := ret.Get(0).(func(context.Context, entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)); ok {
+		return rf(ctx, query)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, entity.QueryStringProduct) []entity.ProductEntity); ok {
+		r0 = rf(ctx, query)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]entity.ProductEntity)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, entity.QueryStringProduct) int64); ok {
+		r1 = rf(ctx, query)
+	} else {
+		r1 = ret.Get(1).(int64)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, entity.QueryStringProduct) int64); ok {
+		r2 = rf(ctx, query)
+	} else {
+		r2 = ret.Get(2).(int64)
+	}
+
+	if rf, ok := ret.Get(3).(func(context.Context, entity.QueryStringProduct) error); ok {
+		r3 = rf(ctx, query)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
+}
+
 // UpdateProduct provides a mock function with given fields: ctx, product
 func (_m *ProductRepositoryInterface) UpdateProduct(ctx context.Context, product entity.ProductEntity) (*entity.ProductEntity, error) {
 	ret := _m.Called(ctx, product)
