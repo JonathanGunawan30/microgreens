@@ -38,7 +38,7 @@ The service utilizes **RabbitMQ** for asynchronous communication and background 
 The application includes a dedicated worker command to run these consumers separately from the API server.
 
 ## Tech Stack
-- **Language**: Go 1.24+
+- **Language**: Go 1.27.4+
 - **Web Framework**: Echo v4
 - **Database**: PostgreSQL with GORM
 - **Caching**: Redis
@@ -49,7 +49,7 @@ The application includes a dedicated worker command to run these consumers separ
 - **Testing**: Testify, Mockery
 
 ## Prerequisites
-- Go 1.24.6 or higher
+- Go 1.27.4 or higher
 - Docker & Docker Compose (for running dependencies)
 - [golang-migrate](https://github.com/golang-migrate/migrate) CLI (for database migrations)
 

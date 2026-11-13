@@ -70,7 +70,7 @@ graph TD
 
 ### Prerequisites
 - Docker & Docker Compose
-- Go 1.24+ (if running locally without Docker)
+- Go 1.27.4+ (if running locally without Docker)
 
 ### 1. Environment Configuration
 Each service contains an `.env.example` and `.env.docker.example`. Copy these to `.env` or `.env.docker`:
