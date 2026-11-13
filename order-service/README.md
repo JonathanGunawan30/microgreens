@@ -43,7 +43,7 @@ The service uses RabbitMQ for asynchronous communication and consistency across 
 - `worker-product-snapshot`: Manages local product data snapshots.
 
 ## Tech Stack
-- **Language**: Go (1.25.0)
+- **Language**: Go (1.27.4)
 - **Framework**: Echo (v4)
 - **ORM**: GORM (v1.25.10)
 - **Database**: PostgreSQL
@@ -54,7 +54,7 @@ The service uses RabbitMQ for asynchronous communication and consistency across 
 - **CLI**: Cobra
 
 ## Prerequisites
-- Go 1.25.0 or later
+- Go 1.27.4 or later
 - Docker and Docker Compose
 - PostgreSQL, Redis, RabbitMQ, Elasticsearch
 

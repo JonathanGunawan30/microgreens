@@ -30,7 +30,7 @@ The service utilizes RabbitMQ to ensure high availability and data consistency w
   - `worker-user-snapshot`: Consumes from `QUEUE_USER_SNAPSHOT_DB` on `EXCHANGE_USER_EVENT` to maintain a localized, up-to-date snapshot of users.
 
 ## Tech Stack
-- **Language**: Go (v1.25.0)
+- **Language**: Go (v1.27.4)
 - **Web Framework**: Echo (v4.15.1)
 - **Database ORM**: GORM with PostgreSQL driver
 - **Message Broker**: RabbitMQ (`amqp091-go`)
@@ -41,7 +41,7 @@ The service utilizes RabbitMQ to ensure high availability and data consistency w
 - **CLI Framework**: Cobra
 
 ## Prerequisites
-- **Go**: 1.25.0 or newer
+- **Go**: 1.27.4 or newer
 - **PostgreSQL**: Running instance
 - **Redis**: Running instance
 - **RabbitMQ**: Running instance

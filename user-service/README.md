@@ -33,7 +33,7 @@ The `user-service` is a fundamental producer in the event-driven ecosystem. It u
 
 ## Tech Stack
 Based on the `go.mod`, the project utilizes the following modern Go stack:
-- **Go**: v1.24+
+- **Go**: v1.27.4+
 - **Web Framework**: [Echo v4](https://echo.labstack.com/)
 - **Database ORM**: [GORM](https://gorm.io/) with PostgreSQL driver
 - **Message Broker**: [RabbitMQ AMQP091](https://github.com/rabbitmq/amqp091-go)
@@ -47,7 +47,7 @@ Based on the `go.mod`, the project utilizes the following modern Go stack:
 - **Testing**: Testify (`stretchr/testify`) and Mockery
 
 ## Prerequisites
-- **Go**: 1.24 or newer
+- **Go**: 1.27.4 or newer
 - **PostgreSQL**: Running instance (v13+)
 - **Redis**: Running instance
 - **RabbitMQ**: Running instance

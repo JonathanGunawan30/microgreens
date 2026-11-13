@@ -58,7 +58,7 @@ The service provides a WebSocket endpoint (`/ws`) for real-time notifications. W
 - **Validation**: go-playground/validator
 
 ## Prerequisites
-- Go 1.25.0+
+- Go 1.27.4+
 - PostgreSQL
 - Redis
 - RabbitMQ
