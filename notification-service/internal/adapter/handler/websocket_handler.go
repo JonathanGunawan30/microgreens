@@ -4,6 +4,7 @@ import (
 	"net/http"
 	ws "notification-service/utils/websocket"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -52,9 +53,27 @@ func (w *webSocketHandler) WebSocketHandler(c echo.Context) error {
 		return err
 	}
 
-	ws.AddWebSocketConn(int64(userID), conn)
-	defer ws.RemoveWebSocketConn(int64(userID))
-	defer conn.Close()
+	client := ws.AddWebSocketConn(int64(userID), conn)
+	defer ws.RemoveWebSocketConn(int64(userID), client)
+
+	done := make(chan struct{})
+	defer close(done)
+
+	go func() {
+		ticker := time.NewTicker(ws.PingPeriod)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := client.WritePing(); err != nil {
+					_ = conn.Close()
+					return
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
 
 	for {
 		if _, _, err := conn.NextReader(); err != nil {
