@@ -47,6 +47,12 @@ type Elasticsearch struct {
 	Password string `json:"password"`
 }
 
+type OpenSearch struct {
+	Host     string `json:"host"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type QueueName struct {
 	ProductES string `json:"product_es"`
 }
@@ -61,7 +67,9 @@ type Config struct {
 	Redis         RedisConfig    `json:"redis"`
 	RabbitMQ      RabbitmqConfig `json:"rabbitmq"`
 	Supabase      Supabase       `json:"supabase"`
+	SearchEngine  string         `json:"search_engine"`
 	Elasticsearch Elasticsearch  `json:"elasticsearch"`
+	OpenSearch    OpenSearch     `json:"opensearch"`
 	ExchangeName  ExchangeName   `json:"exchange_name"`
 	QueueName     QueueName      `json:"queue_name"`
 }
@@ -101,10 +109,16 @@ func NewConfig() *Config {
 			Key:    viper.GetString("SUPABASE_STORAGE_KEY"),
 			Bucket: viper.GetString("SUPABASE_STORAGE_BUCKET"),
 		},
+		SearchEngine: viper.GetString("SEARCH_ENGINE"),
 		Elasticsearch: Elasticsearch{
 			Host:     viper.GetString("ELASTICSEARCH_HOST"),
 			Username: viper.GetString("ELASTICSEARCH_USERNAME"),
 			Password: viper.GetString("ELASTICSEARCH_PASSWORD"),
+		},
+		OpenSearch: OpenSearch{
+			Host:     viper.GetString("OPENSEARCH_HOST"),
+			Username: viper.GetString("OPENSEARCH_USERNAME"),
+			Password: viper.GetString("OPENSEARCH_PASSWORD"),
 		},
 		ExchangeName: ExchangeName{
 			ProductEvent: viper.GetString("EXCHANGE_PRODUCT_EVENT"),

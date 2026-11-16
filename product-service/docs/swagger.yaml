@@ -321,6 +321,23 @@ definitions:
       status:
         type: string
     type: object
+  response.ProductSuggestResponse:
+    properties:
+      category_name:
+        type: string
+      category_slug:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      reguler_price:
+        type: integer
+      sale_price:
+        type: integer
+    type: object
 info:
   contact: {}
 paths:
@@ -1344,6 +1361,45 @@ paths:
           schema:
             $ref: '#/definitions/response.DefaultResponse'
       summary: Get featured products (public)
+      tags:
+      - products
+  /products/suggest:
+    get:
+      consumes:
+      - application/json
+      description: Get lightweight product recommendations as the user types
+      parameters:
+      - description: Search prefix/keyword
+        in: query
+        name: q
+        type: string
+      - description: Alias for q
+        in: query
+        name: search
+        type: string
+      - description: 'Items limit (default: 5, max: 20)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.DefaultResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.ProductSuggestResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.DefaultResponse'
+      summary: Suggest products (autocomplete)
       tags:
       - products
 swagger: "2.0"

@@ -302,6 +302,66 @@ func (_m *ProductRepositoryInterface) SearchProductsFallback(ctx context.Context
 	return r0, r1, r2, r3
 }
 
+// SuggestProducts provides a mock function with given fields: ctx, keyword, limit
+func (_m *ProductRepositoryInterface) SuggestProducts(ctx context.Context, keyword string, limit int) ([]entity.ProductEntity, error) {
+	ret := _m.Called(ctx, keyword, limit)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SuggestProducts")
+	}
+
+	var r0 []entity.ProductEntity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) ([]entity.ProductEntity, error)); ok {
+		return rf(ctx, keyword, limit)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) []entity.ProductEntity); ok {
+		r0 = rf(ctx, keyword, limit)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]entity.ProductEntity)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, int) error); ok {
+		r1 = rf(ctx, keyword, limit)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SuggestProductsFallback provides a mock function with given fields: ctx, keyword, limit
+func (_m *ProductRepositoryInterface) SuggestProductsFallback(ctx context.Context, keyword string, limit int) ([]entity.ProductEntity, error) {
+	ret := _m.Called(ctx, keyword, limit)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SuggestProductsFallback")
+	}
+
+	var r0 []entity.ProductEntity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) ([]entity.ProductEntity, error)); ok {
+		return rf(ctx, keyword, limit)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) []entity.ProductEntity); ok {
+		r0 = rf(ctx, keyword, limit)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]entity.ProductEntity)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, int) error); ok {
+		r1 = rf(ctx, keyword, limit)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpdateProduct provides a mock function with given fields: ctx, product
 func (_m *ProductRepositoryInterface) UpdateProduct(ctx context.Context, product entity.ProductEntity) (*entity.ProductEntity, error) {
 	ret := _m.Called(ctx, product)

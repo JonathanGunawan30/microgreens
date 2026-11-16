@@ -2,17 +2,14 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"product-service/internal/adapter/search"
 	"product-service/internal/core/domain/entity"
 	"product-service/internal/core/domain/model"
 	"product-service/utils/message"
 	"strings"
 
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
-	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/sortorder"
 	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
 )
@@ -21,6 +18,8 @@ type ProductRepositoryInterface interface {
 	GetAllProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)
 	SearchProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)
 	SearchProductsFallback(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)
+	SuggestProducts(ctx context.Context, keyword string, limit int) ([]entity.ProductEntity, error)
+	SuggestProductsFallback(ctx context.Context, keyword string, limit int) ([]entity.ProductEntity, error)
 	GetProductByID(ctx context.Context, productID int64) (*entity.ProductEntity, error)
 	CreateProduct(ctx context.Context, product entity.ProductEntity) (*entity.ProductEntity, error)
 	UpdateProduct(ctx context.Context, product entity.ProductEntity) (*entity.ProductEntity, error)
@@ -31,12 +30,12 @@ type ProductRepositoryInterface interface {
 }
 
 type productRepository struct {
-	db *gorm.DB
-	es *elasticsearch.TypedClient
+	db           *gorm.DB
+	searchEngine search.SearchEngineInterface
 }
 
-func NewProductRepository(db *gorm.DB, es *elasticsearch.TypedClient) ProductRepositoryInterface {
-	return &productRepository{db: db, es: es}
+func NewProductRepository(db *gorm.DB, searchEngine search.SearchEngineInterface) ProductRepositoryInterface {
+	return &productRepository{db: db, searchEngine: searchEngine}
 }
 
 func (p *productRepository) GetAllProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error) {
@@ -148,143 +147,65 @@ func (p *productRepository) GetAllProducts(ctx context.Context, query entity.Que
 }
 
 func (p *productRepository) SearchProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error) {
-	if p.es == nil {
-		return nil, 0, 0, errors.New("elasticsearch not available")
+	if p.searchEngine == nil {
+		return nil, 0, 0, errors.New("search engine not available")
 	}
+	return p.searchEngine.SearchProducts(ctx, query)
+}
 
-	boolQuery := &types.BoolQuery{}
-
-	if query.Search != "" {
-		boolQuery.Must = append(boolQuery.Must, types.Query{
-			MultiMatch: &types.MultiMatchQuery{
-				Query:     query.Search,
-				Fields:    []string{"name^3", "category_slug", "description"},
-				Fuzziness: "AUTO",
-			},
-		})
+func (p *productRepository) SuggestProducts(ctx context.Context, keyword string, limit int) ([]entity.ProductEntity, error) {
+	if p.searchEngine == nil {
+		return nil, errors.New("search engine not available")
 	}
+	return p.searchEngine.SuggestProducts(ctx, keyword, limit)
+}
 
-	if query.CategorySlug != "" {
-		boolQuery.Filter = append(boolQuery.Filter, types.Query{
-			Term: map[string]types.TermQuery{
-				"category_slug.keyword": {
-					Value: query.CategorySlug,
-				},
-			},
-		})
+func (p *productRepository) SuggestProductsFallback(ctx context.Context, keyword string, limit int) ([]entity.ProductEntity, error) {
+	keyword = strings.TrimSpace(keyword)
+	if keyword == "" {
+		return []entity.ProductEntity{}, nil
 	}
-
-	if query.StartPrice > 0 || query.EndPrice > 0 {
-		rangeQuery := &types.NumberRangeQuery{}
-		if query.StartPrice > 0 {
-			val := float64(query.StartPrice)
-			rangeQuery.Gte = (*types.Float64)(&val)
-		}
-		if query.EndPrice > 0 {
-			val := float64(query.EndPrice)
-			rangeQuery.Lte = (*types.Float64)(&val)
-		}
-
-		boolQuery.Filter = append(boolQuery.Filter, types.Query{
-			Range: map[string]types.RangeQuery{
-				"sale_price": rangeQuery,
-			},
-		})
-	}
-
-	boolQuery.Filter = append(boolQuery.Filter, types.Query{
-		Term: map[string]types.TermQuery{
-			"status.keyword": {
-				Value: "active",
-			},
-		},
-	})
-
-	boolQuery.MustNot = append(boolQuery.MustNot, types.Query{
-		Exists: &types.ExistsQuery{
-			Field: "parent_id",
-		},
-	})
-
-	limit := int(query.Limit)
 	if limit <= 0 {
-		limit = 10
+		limit = 5
 	}
 
-	page := int(query.Page)
-	if page <= 0 {
-		page = 1
-	}
+	var modelProducts []model.Product
+	likePattern := "%" + keyword + "%"
+	prefixPattern := keyword + "%"
 
-	offset := (page - 1) * limit
-
-	sortField := "created_at"
-	sortOrder := sortorder.Desc
-
-	if query.OrderBy != "" {
-		allowedSort := map[string]string{
-			"name":  "name.keyword",
-			"price": "sale_price",
-			"stock": "stock",
-			"id":    "id",
-		}
-
-		if val, ok := allowedSort[query.OrderBy]; ok {
-			sortField = val
-		}
-	}
-
-	if query.OrderType == "asc" {
-		sortOrder = sortorder.Asc
-	}
-
-	res, err := p.es.Search().
-		Index("products").
-		Query(&types.Query{Bool: boolQuery}).
-		From(offset).
-		Size(limit).
-		Sort(&types.SortOptions{
-			SortOptions: map[string]types.FieldSort{
-				sortField: {
-					Order: &sortOrder,
-				},
-			},
-		}).
-		Do(ctx)
-
+	err := p.db.WithContext(ctx).Table("products").
+		Select("products.*, categories.name as category_name").
+		Joins("LEFT JOIN categories ON categories.slug = products.category_slug").
+		Where("products.status = ? AND products.parent_id IS NULL", "active").
+		Where("(products.name ILIKE ? OR products.category_slug ILIKE ? OR categories.name ILIKE ?)", likePattern, likePattern, likePattern).
+		Order(gorm.Expr("CASE WHEN products.name ILIKE ? THEN 0 ELSE 1 END, products.name ASC", prefixPattern)).
+		Limit(limit).
+		Find(&modelProducts).Error
 	if err != nil {
-		log.Errorf("[SearchProudcts - 1] Search Error: %v", err)
-		return nil, 0, 0, err
+		log.Errorf("[ProductRepository] SuggestProductsFallback: %v", err)
+		return nil, err
 	}
 
-	var products []entity.ProductEntity
-
-	for _, hit := range res.Hits.Hits {
-		var m model.Product
-		if err := json.Unmarshal(hit.Source_, &m); err == nil {
-			products = append(products, entity.ProductEntity{
-				ID:           m.ID,
-				CategoryName: m.CategoryName,
-				ParentID:     m.ParentID,
-				Name:         m.Name,
-				Image:        m.Image,
-				Description:  m.Description,
-				RegulerPrice: m.RegulerPrice,
-				SalePrice:    m.SalePrice,
-				Unit:         m.Unit,
-				Weight:       m.Weight,
-				Stock:        m.Stock,
-				Variant:      m.Variant,
-				Status:       entity.ProductStatus(m.Status),
-				CreatedAt:    m.CreatedAt,
-			})
-		}
-
+	result := make([]entity.ProductEntity, 0, len(modelProducts))
+	for _, product := range modelProducts {
+		result = append(result, entity.ProductEntity{
+			ID:           product.ID,
+			CategorySlug: product.CategorySlug,
+			CategoryName: product.CategoryName,
+			ParentID:     product.ParentID,
+			Name:         product.Name,
+			Image:        product.Image,
+			RegulerPrice: product.RegulerPrice,
+			SalePrice:    product.SalePrice,
+			Unit:         product.Unit,
+			Weight:       product.Weight,
+			Stock:        product.Stock,
+			Variant:      product.Variant,
+			Status:       entity.ProductStatus(product.Status),
+			CreatedAt:    product.CreatedAt,
+		})
 	}
-	totalHits := res.Hits.Total.Value
-	totalPages := (totalHits + int64(limit) - 1) / int64(limit)
-
-	return products, totalHits, totalPages, nil
+	return result, nil
 }
 
 func (p *productRepository) SearchProductsFallback(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error) {

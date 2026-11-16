@@ -6,6 +6,8 @@ import (
 	"product-service/config"
 	"product-service/internal/adapter/message"
 	"product-service/internal/adapter/repository"
+	"product-service/internal/adapter/search"
+	"strings"
 	"syscall"
 	"time"
 
@@ -15,7 +17,7 @@ import (
 
 var workerCmd = &cobra.Command{
 	Use:   "worker",
-	Short: "Running background workers (ES Indexing & Stock Update)",
+	Short: "Running background workers (Search Indexing & Stock Update)",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Starting Worker Service...")
 		cfg := config.NewConfig()
@@ -43,35 +45,43 @@ var workerCmd = &cobra.Command{
 		stopStockConsumer := make(chan struct{})
 		go message.StartStockUpdateConsumer(rabbitMQClient, productRepo, queueStockName, nil, stopStockConsumer)
 
-		go func() {
-			baseDelay := 5 * time.Second
-			maxDelay := 12 * time.Hour
-			attempt := 0
+		mode := strings.ToLower(strings.TrimSpace(cfg.SearchEngine))
+		if mode != "none" && mode != "off" && mode != "postgres" {
+			go func() {
+				baseDelay := 5 * time.Second
+				maxDelay := 12 * time.Hour
+				attempt := 0
 
-			for {
-				esClient, err := cfg.NewElasticsearchClient()
-				if err == nil {
-					log.Info("Elasticsearch connected, starting ES consumers...")
+				for {
+					searchEngine, err := search.NewSearchEngine(cfg)
+					if err == nil {
+						log.Infof("Search engine (%s) connected, starting consumers...", searchEngine.EngineName())
 
-					close(stopStockConsumer)
+						close(stopStockConsumer)
 
-					esProductRepo := repository.NewProductRepository(dbConn.DB, esClient)
-					go message.StartIndexingConsumer(rabbitMQClient, esClient, queueEsName, productEvent)
-					go message.StartStockUpdateConsumer(rabbitMQClient, esProductRepo, queueStockName, esClient, make(chan struct{}))
-					return
+						searchProductRepo := repository.NewProductRepository(dbConn.DB, searchEngine)
+						go message.StartIndexingConsumer(rabbitMQClient, searchEngine, queueEsName, productEvent)
+						go message.StartStockUpdateConsumer(rabbitMQClient, searchProductRepo, queueStockName, searchEngine, make(chan struct{}))
+						return
+					}
+
+					shift := attempt
+					if shift > 16 {
+						shift = 16
+					}
+					delay := baseDelay * time.Duration(1<<shift)
+					if delay > maxDelay {
+						delay = maxDelay
+					}
+					attempt++
+					log.Warnf("Search engine not ready (attempt %d): %v, retrying in %v", attempt, err, delay)
+					time.Sleep(delay)
 				}
-
-				attempt++
-				delay := baseDelay * time.Duration(1<<attempt)
-				if delay > maxDelay {
-					delay = maxDelay
-				}
-				log.Warnf("Elasticsearch not ready (attempt %d), retrying in %v", attempt, delay)
-				time.Sleep(delay)
-			}
-		}()
-
-		log.Infof("Worker started. Stock consumer running, waiting for Elasticsearch...")
+			}()
+			log.Infof("Worker started. Stock consumer running, waiting for search engine...")
+		} else {
+			log.Infof("Worker started in PostgreSQL-only mode (SEARCH_ENGINE=%s). Stock consumer running.", mode)
+		}
 
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)

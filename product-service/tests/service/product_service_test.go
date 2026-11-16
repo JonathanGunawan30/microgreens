@@ -117,3 +117,95 @@ func TestProductService_DeleteProductByID(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestProductService_SearchProducts(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("search engine success", func(t *testing.T) {
+		repo := new(mocks.ProductRepositoryInterface)
+		repoCat := new(mocks.CategoryRepositoryInterface)
+		svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
+
+		query := entity.QueryStringProduct{Search: "bayam", StartPrice: 10000, EndPrice: 5000}
+		expectedQuery := entity.QueryStringProduct{Search: "bayam", StartPrice: 5000, EndPrice: 10000}
+
+		repo.On("SearchProducts", ctx, expectedQuery).
+			Return([]entity.ProductEntity{{ID: 1, Name: "Bayam Hijau"}}, int64(1), int64(1), nil).Once()
+
+		res, count, total, err := svc.SearchProducts(ctx, query)
+
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+		assert.Equal(t, int64(1), count)
+		assert.Equal(t, int64(1), total)
+	})
+
+	t.Run("fallback to postgres on search engine error", func(t *testing.T) {
+		repo := new(mocks.ProductRepositoryInterface)
+		repoCat := new(mocks.CategoryRepositoryInterface)
+		svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
+
+		query := entity.QueryStringProduct{Search: "kangkung"}
+
+		repo.On("SearchProducts", ctx, query).
+			Return(nil, int64(0), int64(0), errors.New("search engine down")).Once()
+		repo.On("SearchProductsFallback", ctx, query).
+			Return([]entity.ProductEntity{{ID: 2, Name: "Kangkung"}}, int64(1), int64(1), nil).Once()
+
+		res, count, total, err := svc.SearchProducts(ctx, query)
+
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+		assert.Equal(t, "Kangkung", res[0].Name)
+		assert.Equal(t, int64(1), count)
+		assert.Equal(t, int64(1), total)
+	})
+}
+
+func TestProductService_SuggestProducts(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("empty keyword returns empty slice without repo call", func(t *testing.T) {
+		repo := new(mocks.ProductRepositoryInterface)
+		repoCat := new(mocks.CategoryRepositoryInterface)
+		svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
+
+		res, err := svc.SuggestProducts(ctx, "   ", 5)
+
+		assert.NoError(t, err)
+		assert.Empty(t, res)
+		repo.AssertNotCalled(t, "SuggestProducts", mock.Anything, mock.Anything, mock.Anything)
+	})
+
+	t.Run("search engine success with limit normalization", func(t *testing.T) {
+		repo := new(mocks.ProductRepositoryInterface)
+		repoCat := new(mocks.CategoryRepositoryInterface)
+		svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
+
+		repo.On("SuggestProducts", ctx, "bay", 5).
+			Return([]entity.ProductEntity{{ID: 1, Name: "Bayam Organik"}}, nil).Once()
+
+		res, err := svc.SuggestProducts(ctx, " bay ", 0)
+
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+		assert.Equal(t, "Bayam Organik", res[0].Name)
+	})
+
+	t.Run("fallback to postgres on search engine error", func(t *testing.T) {
+		repo := new(mocks.ProductRepositoryInterface)
+		repoCat := new(mocks.CategoryRepositoryInterface)
+		svc := service2.NewProductService(repo, nil, "test-exchange", repoCat)
+
+		repo.On("SuggestProducts", ctx, "tom", 10).
+			Return(nil, errors.New("opensearch timeout")).Once()
+		repo.On("SuggestProductsFallback", ctx, "tom", 10).
+			Return([]entity.ProductEntity{{ID: 3, Name: "Tomat Cherry"}}, nil).Once()
+
+		res, err := svc.SuggestProducts(ctx, "tom", 10)
+
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+		assert.Equal(t, "Tomat Cherry", res[0].Name)
+	})
+}

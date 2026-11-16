@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"product-service/config"
 	"product-service/internal/adapter/repository"
+	"product-service/internal/adapter/search"
 	"product-service/internal/core/domain/entity"
-	"strconv"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/labstack/gommon/log"
 )
 
-func StartStockUpdateConsumer(client *config.RabbitMQClient, repo repository.ProductRepositoryInterface, queueName string, es *elasticsearch.TypedClient, stop <-chan struct{}) {
+func StartStockUpdateConsumer(client *config.RabbitMQClient, repo repository.ProductRepositoryInterface, queueName string, searchEngine search.SearchEngineInterface, stop <-chan struct{}) {
 	if client == nil {
 		return
 	}
@@ -48,7 +47,7 @@ func StartStockUpdateConsumer(client *config.RabbitMQClient, repo repository.Pro
 				return
 			}
 			log.Infof("[StockConsumer] Received payload: %s", d.Body)
-			err := processStockUpdate(d.Body, repo, es)
+			err := processStockUpdate(d.Body, repo, searchEngine)
 			if err != nil {
 				log.Errorf("[StockConsumer] Failed to process: %v", err)
 				d.Nack(false, false)
@@ -56,13 +55,13 @@ func StartStockUpdateConsumer(client *config.RabbitMQClient, repo repository.Pro
 				d.Ack(false)
 			}
 		case <-stop:
-			log.Info("StockUpdateConsumer stopping, handing off to ES-aware consumer...")
+			log.Info("StockUpdateConsumer stopping, handing off to search-aware consumer...")
 			return
 		}
 	}
 }
 
-func processStockUpdate(body []byte, repo repository.ProductRepositoryInterface, es *elasticsearch.TypedClient) error {
+func processStockUpdate(body []byte, repo repository.ProductRepositoryInterface, searchEngine search.SearchEngineInterface) error {
 	var msg entity.StockUpdateMessage
 	if err := json.Unmarshal(body, &msg); err != nil {
 		return fmt.Errorf("invalid JSON: %v", err)
@@ -88,22 +87,14 @@ func processStockUpdate(body []byte, repo repository.ProductRepositoryInterface,
 		log.Infof("Stock updated! Child ID %d, Parent ID %d remaining stock: %d",
 			childProduct.ID, parentProduct.ID, parentProduct.Stock)
 
-		if es != nil {
-			if err := syncToES(ctx, es, parentProduct); err != nil {
-				log.Warnf("Failed to sync parent to ES (non-fatal): %v", err)
+		if searchEngine != nil {
+			if err := searchEngine.IndexProduct(ctx, *parentProduct); err != nil {
+				log.Warnf("Failed to sync parent to %s (non-fatal): %v", searchEngine.EngineName(), err)
 			}
 		} else {
-			log.Warn("Elasticsearch not available, skipping ES sync for stock update")
+			log.Warn("Search engine not available, skipping search index sync for stock update")
 		}
 	}
 
 	return nil
-}
-
-func syncToES(ctx context.Context, es *elasticsearch.TypedClient, product *entity.ProductEntity) error {
-	_, err := es.Index("products").
-		Id(strconv.FormatInt(product.ID, 10)).
-		Request(product).
-		Do(ctx)
-	return err
 }

@@ -202,3 +202,52 @@ func TestProductHandler_DeleteProductByID(t *testing.T) {
 		}
 	})
 }
+
+func TestProductHandler_SuggestProducts(t *testing.T) {
+	e := echo.New()
+	mockSvc := new(svcMocks.ProductServiceInterface)
+	cfg := &config.Config{
+		App: config.App{
+			JwtSecretKey: "secret",
+		},
+	}
+	h := handler2.NewProductHandler(e, mockSvc, cfg, nil)
+
+	t.Run("success 200", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/products/suggest?q=bay&limit=5", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		mockSvc.On("SuggestProducts", mock.Anything, "bay", 5).Return([]entity.ProductEntity{
+			{
+				ID:           10,
+				Name:         "Bayam Hijau",
+				Image:        "https://img.example/bayam.png",
+				CategoryName: "Sayur Daun",
+				CategorySlug: "sayur-daun",
+				SalePrice:    5000,
+				RegulerPrice: 6000,
+			},
+		}, nil).Once()
+
+		if assert.NoError(t, h.SuggestProducts(c)) {
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			var body struct {
+				Message string `json:"message"`
+				Data    []struct {
+					ID           int64  `json:"id"`
+					Name         string `json:"name"`
+					CategorySlug string `json:"category_slug"`
+				} `json:"data"`
+			}
+			err := json.Unmarshal(rec.Body.Bytes(), &body)
+			assert.NoError(t, err)
+			assert.Equal(t, "Success", body.Message)
+			assert.Len(t, body.Data, 1)
+			assert.Equal(t, int64(10), body.Data[0].ID)
+			assert.Equal(t, "Bayam Hijau", body.Data[0].Name)
+			assert.Equal(t, "sayur-daun", body.Data[0].CategorySlug)
+		}
+	})
+}
