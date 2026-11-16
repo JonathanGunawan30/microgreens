@@ -7,6 +7,7 @@ import (
 	"product-service/internal/adapter/repository"
 	"product-service/internal/core/domain/entity"
 	msgs "product-service/utils/message"
+	"strings"
 
 	"github.com/labstack/gommon/log"
 )
@@ -14,6 +15,7 @@ import (
 type ProductServiceInterface interface {
 	GetAllProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)
 	SearchProducts(ctx context.Context, query entity.QueryStringProduct) ([]entity.ProductEntity, int64, int64, error)
+	SuggestProducts(ctx context.Context, keyword string, limit int) ([]entity.ProductEntity, error)
 	GetProductByID(ctx context.Context, productID int64) (*entity.ProductEntity, error)
 	CreateProduct(ctx context.Context, product entity.ProductEntity) error
 	UpdateProduct(ctx context.Context, product entity.ProductEntity) error
@@ -51,11 +53,32 @@ func (p *productService) SearchProducts(ctx context.Context, query entity.QueryS
 	products, count, totalPages, err := p.repo.SearchProducts(ctx, query)
 
 	if err != nil {
-		log.Warnf("[ProductService] Failed to search products with Elasticsearch (Fallback to relational database)")
+		log.Warnf("[ProductService] Failed to search products with search engine, falling back to PostgreSQL: %v", err)
 		return p.repo.SearchProductsFallback(ctx, query)
 	}
 
 	return products, count, totalPages, nil
+}
+
+func (p *productService) SuggestProducts(ctx context.Context, keyword string, limit int) ([]entity.ProductEntity, error) {
+	keyword = strings.TrimSpace(keyword)
+	if keyword == "" {
+		return []entity.ProductEntity{}, nil
+	}
+
+	if limit <= 0 {
+		limit = 5
+	} else if limit > 20 {
+		limit = 20
+	}
+
+	suggestions, err := p.repo.SuggestProducts(ctx, keyword, limit)
+	if err != nil {
+		log.Warnf("[ProductService] Failed to suggest products with search engine, falling back to PostgreSQL: %v", err)
+		return p.repo.SuggestProductsFallback(ctx, keyword, limit)
+	}
+
+	return suggestions, nil
 }
 
 func (p *productService) GetProductByID(ctx context.Context, productID int64) (*entity.ProductEntity, error) {

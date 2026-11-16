@@ -77,3 +77,13 @@ type ProductHomeDetailResponse struct {
 	Weight       int64                      `json:"weight"`
 	Child        []ProductChildHomeResponse `json:"child"`
 }
+
+type ProductSuggestResponse struct {
+	ID           int64  `json:"id"`
+	Name         string `json:"name"`
+	Image        string `json:"image"`
+	CategoryName string `json:"category_name"`
+	CategorySlug string `json:"category_slug"`
+	SalePrice    int64  `json:"sale_price"`
+	RegulerPrice int64  `json:"reguler_price"`
+}

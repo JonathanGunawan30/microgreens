@@ -27,6 +27,7 @@ type ProductHandlerInterface interface {
 	DeleteProductByID(c echo.Context) error
 	GetHomeProducts(c echo.Context) error
 	GetShopProducts(c echo.Context) error
+	SuggestProducts(c echo.Context) error
 	GetHomeProductDetail(c echo.Context) error
 }
 
@@ -50,6 +51,7 @@ func NewProductHandler(e *echo.Echo, productService service.ProductServiceInterf
 	homeGroup := e.Group("/products")
 	homeGroup.GET("", productHandler.GetShopProducts)
 	homeGroup.GET("/featured", productHandler.GetHomeProducts)
+	homeGroup.GET("/suggest", productHandler.SuggestProducts)
 	homeGroup.GET("/:id", productHandler.GetHomeProductDetail)
 
 	return productHandler
@@ -572,6 +574,62 @@ func (p *productHandler) GetHomeProducts(c echo.Context) error {
 	resp.Message = "Success"
 	resp.Data = respProducts
 
+	return c.JSON(http.StatusOK, resp)
+}
+
+// SuggestProducts godoc
+// @Summary Suggest products (autocomplete)
+// @Description Get lightweight product recommendations as the user types
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param q query string false "Search prefix/keyword"
+// @Param search query string false "Alias for q"
+// @Param limit query int false "Items limit (default: 5, max: 20)"
+// @Success 200 {object} response.DefaultResponse{data=[]response.ProductSuggestResponse} "Success"
+// @Failure 500 {object} response.DefaultResponse "Internal Server Error"
+// @Router /products/suggest [get]
+func (p *productHandler) SuggestProducts(c echo.Context) error {
+	var (
+		resp = response.DefaultResponse{}
+		ctx  = c.Request().Context()
+	)
+
+	keyword := c.QueryParam("q")
+	if keyword == "" {
+		keyword = c.QueryParam("search")
+	}
+
+	limit := 5
+	if limitStr := c.QueryParam("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	products, err := p.productService.SuggestProducts(ctx, keyword, limit)
+	if err != nil {
+		log.Errorf("[ProductHandler] SuggestProducts: %v", err)
+		resp.Message = "internal server error"
+		resp.Data = nil
+		return c.JSON(http.StatusInternalServerError, resp)
+	}
+
+	suggestions := make([]response.ProductSuggestResponse, 0, len(products))
+	for _, product := range products {
+		suggestions = append(suggestions, response.ProductSuggestResponse{
+			ID:           product.ID,
+			Name:         product.Name,
+			Image:        product.Image,
+			CategoryName: product.CategoryName,
+			CategorySlug: product.CategorySlug,
+			SalePrice:    product.SalePrice,
+			RegulerPrice: product.RegulerPrice,
+		})
+	}
+
+	resp.Message = "Success"
+	resp.Data = suggestions
 	return c.JSON(http.StatusOK, resp)
 }
 

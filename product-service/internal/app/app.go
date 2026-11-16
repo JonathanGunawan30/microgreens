@@ -7,6 +7,7 @@ import (
 	"product-service/config"
 	"product-service/internal/adapter/handler"
 	"product-service/internal/adapter/repository"
+	"product-service/internal/adapter/search"
 	"product-service/internal/adapter/storage"
 	"product-service/internal/core/service"
 	"product-service/utils/validator"
@@ -32,16 +33,18 @@ func RunServer() {
 	if err != nil {
 		log.Fatalf("[RunServer - 2] Failed to connect to RabbbitMQ: %v", err)
 	}
-	elasticsearchClient, err := cfg.NewElasticsearchClient()
+	searchEngine, err := search.NewSearchEngine(cfg)
 	if err != nil {
-		log.Warnf("[RunServer - 3] Failed to connect to Elasticsearch: %v", err)
-		elasticsearchClient = nil
+		log.Warnf("[RunServer - 3] Search engine unavailable (%v), falling back to PostgreSQL", err)
+		searchEngine = nil
+	} else {
+		log.Infof("[RunServer - 3] Search engine initialized: %s", searchEngine.EngineName())
 	}
 
 	defer rabbitMQClient.Close()
 
 	categoryRepository := repository.NewCategoryRepository(db.DB)
-	productRepository := repository.NewProductRepository(db.DB, elasticsearchClient)
+	productRepository := repository.NewProductRepository(db.DB, searchEngine)
 	cartRepository := repository.NewCartRedisRepository(redisClient)
 
 	categoryService := service.NewCategoryService(categoryRepository)
