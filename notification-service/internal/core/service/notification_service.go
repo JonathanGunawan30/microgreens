@@ -84,8 +84,8 @@ func (n *NotificationService) sendPush(notif entity.NotificationEntity) error {
 		return fmt.Errorf("receiver id is nil")
 	}
 
-	conn := websocket.GetWebSocketConn(*notif.ReceiverID)
-	if conn == nil {
+	conns := websocket.GetWebSocketConns(*notif.ReceiverID)
+	if len(conns) == 0 {
 		log.Infof("User %d is offline, skipping real-time push", *notif.ReceiverID)
 		return nil
 	}
@@ -97,7 +97,21 @@ func (n *NotificationService) sendPush(notif entity.NotificationEntity) error {
 		"send_at": notif.SendAt,
 	}
 
-	return conn.WriteJSON(msg)
+	var lastErr error
+	delivered := false
+	for _, client := range conns {
+		if err := client.WriteJSON(msg); err != nil {
+			lastErr = err
+			websocket.RemoveWebSocketConn(*notif.ReceiverID, client)
+			continue
+		}
+		delivered = true
+	}
+
+	if delivered {
+		return nil
+	}
+	return lastErr
 }
 
 func (n *NotificationService) GetAll(ctx context.Context, query entity.NotifQueryString, userID int64) ([]entity.NotificationEntity, int64, int64, error) {

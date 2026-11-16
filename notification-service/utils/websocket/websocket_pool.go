@@ -7,46 +7,86 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	PongWait   = 60 * time.Second
+	PingPeriod = 30 * time.Second
+	WriteWait  = 10 * time.Second
+)
+
+// ClientConn wraps a WebSocket connection with a write mutex to prevent concurrent write panics.
+type ClientConn struct {
+	Conn *websocket.Conn
+	mu   sync.Mutex
+}
+
+func (c *ClientConn) WriteJSON(v any) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	_ = c.Conn.SetWriteDeadline(time.Now().Add(WriteWait))
+	return c.Conn.WriteJSON(v)
+}
+
+func (c *ClientConn) WritePing() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.Conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(WriteWait))
+}
+
 var (
-	wsClients      = make(map[int64]*websocket.Conn)
+	wsClients      = make(map[int64]map[*ClientConn]struct{})
 	wsClientsMutex = sync.RWMutex{}
 )
 
-func AddWebSocketConn(userID int64, conn *websocket.Conn) {
+func AddWebSocketConn(userID int64, conn *websocket.Conn) *ClientConn {
+	client := &ClientConn{Conn: conn}
+
+	conn.SetReadLimit(1024)
+	_ = conn.SetReadDeadline(time.Now().Add(PongWait))
+	conn.SetPongHandler(func(string) error {
+		_ = conn.SetReadDeadline(time.Now().Add(PongWait))
+		return nil
+	})
+
 	wsClientsMutex.Lock()
 	defer wsClientsMutex.Unlock()
 
-	if oldConn, exists := wsClients[userID]; exists {
-		_ = oldConn.Close()
+	if wsClients[userID] == nil {
+		wsClients[userID] = make(map[*ClientConn]struct{})
 	}
+	wsClients[userID][client] = struct{}{}
 
-	wsClients[userID] = conn
-
-	conn.SetReadLimit(1024)
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
+	return client
 }
 
-func GetWebSocketConn(userID int64) *websocket.Conn {
+func GetWebSocketConns(userID int64) []*ClientConn {
 	wsClientsMutex.RLock()
 	defer wsClientsMutex.RUnlock()
 
-	conn, ok := wsClients[userID]
-	if !ok {
+	connsMap, ok := wsClients[userID]
+	if !ok || len(connsMap) == 0 {
 		return nil
 	}
-	return conn
+
+	conns := make([]*ClientConn, 0, len(connsMap))
+	for client := range connsMap {
+		conns = append(conns, client)
+	}
+	return conns
 }
 
-func RemoveWebSocketConn(userID int64) {
-	wsClientsMutex.Lock()
-	defer wsClientsMutex.Unlock()
-
-	if conn, exists := wsClients[userID]; exists {
-		_ = conn.Close()
-		delete(wsClients, userID)
+func RemoveWebSocketConn(userID int64, client *ClientConn) {
+	if client == nil {
+		return
 	}
+
+	wsClientsMutex.Lock()
+	if connsMap, exists := wsClients[userID]; exists {
+		delete(connsMap, client)
+		if len(connsMap) == 0 {
+			delete(wsClients, userID)
+		}
+	}
+	wsClientsMutex.Unlock()
+
+	_ = client.Conn.Close()
 }
