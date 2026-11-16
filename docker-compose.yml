@@ -27,6 +27,20 @@ services:
     networks:
       - microservices-net
 
+  opensearch:
+    image: opensearchproject/opensearch:2.13.0
+    container_name: micro_opensearch
+    profiles: ["search"]
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m
+    volumes:
+      - osdata:/usr/share/opensearch/data
+    networks:
+      - microservices-net
+
   migrate-user:
     image: migrate/migrate
     profiles: ["migration"]
@@ -229,6 +243,7 @@ services:
 volumes:
   rbdata:
   esdata:
+  osdata:
 
 networks:
   microservices-net:

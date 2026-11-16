@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"product-service/config"
+	"product-service/internal/adapter/search"
 	"product-service/internal/core/domain/entity"
 
 	"github.com/labstack/gommon/log"
-
-	"github.com/elastic/go-elasticsearch/v8"
 )
 
-func StartIndexingConsumer(client *config.RabbitMQClient, esClient *elasticsearch.TypedClient, queueName, exchangeName string) {
-	if client == nil {
+func StartIndexingConsumer(client *config.RabbitMQClient, searchEngine search.SearchEngineInterface, queueName, exchangeName string) {
+	if client == nil || searchEngine == nil {
 		return
 	}
 	ch, err := client.GetConn().Channel()
@@ -56,7 +55,7 @@ func StartIndexingConsumer(client *config.RabbitMQClient, esClient *elasticsearc
 		for d := range msgs {
 			log.Infof("Received a message: %s", d.Body)
 
-			err := processMessage(d.Body, esClient)
+			err := processMessage(d.Body, searchEngine)
 
 			if err != nil {
 				log.Errorf("Error processing message: %v", err)
@@ -71,7 +70,7 @@ func StartIndexingConsumer(client *config.RabbitMQClient, esClient *elasticsearc
 	<-forever
 }
 
-func processMessage(body []byte, esClient *elasticsearch.TypedClient) error {
+func processMessage(body []byte, searchEngine search.SearchEngineInterface) error {
 	var msg entity.ProductEvent
 	if err := json.Unmarshal(body, &msg); err != nil {
 		return fmt.Errorf("error decoding JSON wrapper: %v", err)
@@ -85,26 +84,19 @@ func processMessage(body []byte, esClient *elasticsearch.TypedClient) error {
 			return fmt.Errorf("action INSERT but data is nil")
 		}
 
-		_, err := esClient.Index("products").
-			Id(fmt.Sprintf("%d", msg.Data.ID)).
-			Request(msg.Data).
-			Do(ctx)
-
-		if err != nil {
-			return fmt.Errorf("error indexing/updating to elasticsearch: %v", err)
+		if err := searchEngine.IndexProduct(ctx, *msg.Data); err != nil {
+			return fmt.Errorf("error indexing/updating to %s: %v", searchEngine.EngineName(), err)
 		}
-		log.Infof("Successfully indexed/updated product ID: %v", msg.Data.ID)
+		log.Infof("Successfully indexed/updated product ID %v on %s", msg.Data.ID, searchEngine.EngineName())
 	case entity.ActionDelete:
 		if msg.ID == 0 {
 			return fmt.Errorf("action DELETE but ID is missing")
 		}
 
-		_, err := esClient.Delete("products", fmt.Sprintf("%d", msg.ID)).Do(ctx)
-
-		if err != nil {
-			return fmt.Errorf("error deleting from elasticsearch: %v", err)
+		if err := searchEngine.DeleteProduct(ctx, msg.ID); err != nil {
+			return fmt.Errorf("error deleting from %s: %v", searchEngine.EngineName(), err)
 		}
-		log.Infof("Successfully deleted product ID: %v", msg.ID)
+		log.Infof("Successfully deleted product ID %v on %s", msg.ID, searchEngine.EngineName())
 	default:
 		log.Warnf("Unknown action received: %s", msg.Action)
 	}
