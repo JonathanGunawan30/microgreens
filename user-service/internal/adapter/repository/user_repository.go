@@ -71,6 +71,60 @@ func (u *userRepository) CreateUserAccount(ctx context.Context, user entity.User
 	var userID int64
 
 	err := u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var existingUser model.User
+		findErr := tx.Where("email = ?", user.Email).First(&existingUser).Error
+		if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
+			log.Errorf("[UserRepository-0] CreateUserAccount: %v", findErr)
+			return findErr
+		}
+
+		if findErr == nil {
+			if existingUser.IsVerified {
+				return message.ErrEmailAlreadyExists
+			}
+
+			var lastToken model.VerificationToken
+			tokenErr := tx.Where("user_id = ? AND token_type = ?", existingUser.ID, "email_verification").
+				Order("created_at DESC").
+				First(&lastToken).Error
+			if tokenErr != nil && !errors.Is(tokenErr, gorm.ErrRecordNotFound) {
+				log.Errorf("[UserRepository-1b] CreateUserAccount: %v", tokenErr)
+				return tokenErr
+			}
+
+			if tokenErr == nil && lastToken.ExpiresAt.After(time.Now()) {
+				return message.ErrVerificationPending
+			}
+
+			if err := tx.Model(&existingUser).Updates(map[string]any{
+				"name":     user.Name,
+				"password": user.Password,
+			}).Error; err != nil {
+				log.Errorf("[UserRepository-1c] CreateUserAccount: %v", err)
+				return err
+			}
+
+			if err := tx.Where("user_id = ? AND token_type = ?", existingUser.ID, "email_verification").
+				Delete(&model.VerificationToken{}).Error; err != nil {
+				log.Errorf("[UserRepository-1d] CreateUserAccount: %v", err)
+				return err
+			}
+
+			newVerify := model.VerificationToken{
+				UserID:    existingUser.ID,
+				Token:     user.Token,
+				TokenType: "email_verification",
+				ExpiresAt: time.Now().Add(time.Hour * 24),
+			}
+			if err := tx.Create(&newVerify).Error; err != nil {
+				log.Errorf("[UserRepository-1e] CreateUserAccount: %v", err)
+				return err
+			}
+
+			userID = existingUser.ID
+			return nil
+		}
+
 		modelRole := model.Role{}
 		err := tx.Where("name = ?", "Customer").First(&modelRole).Error
 		if err != nil {

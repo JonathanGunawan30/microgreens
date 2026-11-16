@@ -105,6 +105,20 @@ func TestCreateUserAccount(t *testing.T) {
 			assert.Equal(t, http.StatusConflict, rec.Code)
 		}
 	})
+
+	t.Run("TooManyRequests - Verification Pending", func(t *testing.T) {
+		signUpReq := `{"name": "Test", "email": "pending@example.com", "password": "password123", "password_confirmation": "password123"}`
+		req := httptest.NewRequest(http.MethodPost, "/signup", bytes.NewBufferString(signUpReq))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		mockService.On("CreateUserAccount", mock.Anything, mock.Anything).Return(message.ErrVerificationPending).Once()
+
+		if assert.NoError(t, h.CreateUserAccount(c)) {
+			assert.Equal(t, http.StatusTooManyRequests, rec.Code)
+		}
+	})
 }
 
 func TestGetUserProfile(t *testing.T) {
