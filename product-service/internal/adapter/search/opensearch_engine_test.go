@@ -30,7 +30,7 @@ func TestOpenSearchEngine(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"version":{"distribution":"opensearch"}}`))
 
-		case r.Method == http.MethodHead && r.URL.Path == "/products":
+		case r.Method == http.MethodGet && r.URL.Path == "/products":
 			if !indexCreated {
 				w.WriteHeader(http.StatusNotFound)
 				return

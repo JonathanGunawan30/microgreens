@@ -79,7 +79,7 @@ func (o *OpenSearchEngine) Ping(ctx context.Context) error {
 }
 
 func (o *OpenSearchEngine) EnsureIndex(ctx context.Context) error {
-	status, body, err := o.doRequest(ctx, http.MethodHead, "/"+ProductsIndex, nil)
+	status, body, err := o.doRequest(ctx, http.MethodGet, "/"+ProductsIndex, nil)
 	if err != nil {
 		return err
 	}
